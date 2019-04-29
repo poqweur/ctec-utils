@@ -20,18 +20,17 @@ with open(join(dirname(__file__), './VERSION.txt'), 'rb') as f:
 mdpath = "./README.md"
 
 setup(
-    name='ampq_cl',  # 模块名
+    name='ctec-utils',  # 模块名
     version=version,  # 版本号
-    description='A generic queue client',  # 标题描述
+    description='working tool',  # 标题描述
     packages=find_packages(exclude=[]),  # 包含目录中所有包，exclude=['哪些文件除外']
     author='wangjy',  # 作者
     author_email='1149447019@qq.com',  # 作者邮箱
     license='Apache License v2',
     package_data={'': ['*.*']},  # {'包名': ['正则']}
-    url='https://github.com/poqweur/ampq_cl',
+    url='',
     # install_requires=[str(ir.req) for ir in parse_requirements("requirements.txt", session=False)],  # 所需的运行环境
     install_requires=[
-        "kombu==3.0.35",
         "pika==0.13.1"
     ],
     long_description=open(mdpath, encoding='utf-8').read(),
@@ -39,11 +38,10 @@ setup(
     data_files=[mdpath],
     zip_safe=False,
     classifiers=[
-        'Programming Language :: Python',
+        'Programming Language :: Python3',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: Unix',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
 )
