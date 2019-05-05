@@ -2,22 +2,26 @@
 # -*- coding: utf-8 -*-
 # Author: Wjy
 import cx_Oracle
+import pymysql
 from DBUtils.PooledDB import PooledDB
 from rediscluster import StrictRedisCluster
+from pymongo import MongoClient
 
 
 class OraclePool(object):
     """
-    封装连接池对象
+    封装cx_oracle，创建连接池对象
     """
 
-    def __init__(self, user, password, dsn, mincached, maxcached, threaded=False):
+    def __init__(self, user: str, password: str, dsn: str, mincached: int, maxcached: int, threaded: bool = False,
+                 log=None):
         self.user = user
         self.password = password
         self.dsn = dsn
         self.min_cached = mincached
         self.max_cached = maxcached
         self.threaded = threaded
+        self.log = log
         self.__connection = self.__get_connect()
 
     def __get_connect(self):
@@ -30,87 +34,155 @@ class OraclePool(object):
                         maxcached=self.max_cached,
                         threaded=self.threaded)
 
-    def procedure_cursor(self, procedure_name, *args):
+    def procedure_cursor(self, procedure_name, *args, commit=False):
+        return_list = []
         try:
             conn = self.__connection.connection()
             cursor = conn.cursor()
             result = cursor.var(cx_Oracle.CURSOR)
             params = list(args)
             params.append(result)
-            cursor.callproc(procedure_name, params)
-            conn.commit()
+            _, resp_result = cursor.callproc(procedure_name, params)
+            if commit:
+                conn.commit()
             conn.close()
         except Exception as e:
-            self.close()
-            self.__connection = self.__get_connect()
-            print(e)
+            if self.log:
+                self.log.error("{}, params={}, errmsg={}".format(procedure_name, args, e))
+            return None
         else:
-            return result.getvalue()
+            for res in list(result.getvalue()):
+                return_list.append(dict(zip([resp[0] for resp in resp_result.description], res)))
+            if self.log:
+                self.log.debug("{}, params={}, result={}".format(procedure_name, args, return_list))
+            return return_list
 
-    def procedure_string(self, procedure_name, *args):
+    def procedure_string(self, procedure_name, *args, commit=False):
         try:
             conn = self.__connection.connection()
             cursor = conn.cursor()
             result = cursor.var(cx_Oracle.STRING)
             cursor.callproc(procedure_name, args)
-            conn.commit()
+            if commit:
+                conn.commit()
             conn.close()
         except Exception as e:
-            self.close()
-            self.__connection = self.__get_connect()
-            return e
+            if self.log:
+                self.log.error("{}, params={}, errmsg={}".format(procedure_name, args, e))
+            return None
         else:
+            if self.log:
+                self.log.debug("{}, params={}, result={}".format(procedure_name, args, result))
             return result
 
-    def row_sql(self, sql, param):
+    def row_sql(self, sql, param, commit=False):
         try:
             conn = self.__connection.connection()
             cursor = conn.cursor()
             return_result = list()
             result_db = cursor.execute(sql, param)
+            if commit:
+                cursor.commit()
             result = result_db.fetchall()
         except Exception as e:
-            self.close()
-            self.__connection = self.__get_connect()
-            return e
+            if self.log:
+                self.log.error("{}, params={}, errmsg={}".format(sql, param, e))
+            return None
         else:
-            if len(result) > 0:
+            if self.log:
+                self.log.debug("{}, params={}, result={}".format(sql, param, result))
+
+            if isinstance(result, list) and len(result) > 0:
                 key_list = [key[0] for key in result_db.description]
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
-            return return_result
-
-    def __del__(self):
-        self.close()
-
-    def close(self):
-        try:
-            self.__connection.close()
-        except:
-            pass
+                return return_result
+            return result
 
 
 class RedisCluster(object):
+    """
 
-    def __init__(self, redis_nodes):
+    """
+
+    def __init__(self, redis_nodes: list):
         self.redis_nodes = redis_nodes
 
     def get_conn(self):
         return StrictRedisCluster(startup_nodes=self.redis_nodes)
 
 
+class MongodbCluster(object):
+    """
+    连接mongodb集群
 
-if __name__ == '__main__':
-    # db = OraclePool("e_tyxb_log", "e_tyxb_log", '172.16.50.67/orcl',0, 1)
-    # result = db.procedure_cursor("SP_QUERY_LOG_ORDER_ISSUE", "83917080900201000396")
-    # print(list(result))
-    redis_nodes = [
-        {'host': '10.128.112.111', 'port': 7001},
-        {'host': '10.128.112.111', 'port': 7002},
-    ]
+    示例：
+        mongodb_nodes = [
+             {'host': '10.128.112.111', 'port': 7001},
+             {'host': '10.128.112.111', 'port': 7002},
+        ]
 
-    re = RedisCluster(redis_nodes).get_conn()
+    todo: 未完成
+    """
 
-    for i in range(14900000011, 14900000021):
-        re.set('user_phone_' + str(i), '888888')
-        print(re.get('user_phone_' + str(i)))
+    def __init__(self, user: str, password: str, hosts: list):
+        self.user = user
+        self.password = password
+        self.conn = self.__get_connect(hosts)
+
+    def __get_connect(self, hosts):
+        hosts_list = ",".join(["{}:{}".format(host["host"], host["port"]) for host in hosts])
+        url = "mongodb://{user}:{password}@{list}".format(user=self.user, password=self.password, list=hosts_list)
+        return MongoClient(url)
+
+
+class MysqlPool(object):
+    """
+    mysql连接池
+
+    示例：
+
+        mysql = MysqlPool(host=host, port=3306, user="root", password="mysql", mincached=0, maxcached=1, db=库名)
+        print(mysql.row_sql("show databases;"))
+    """
+    def __init__(self, user: str, password: str, host: str, port: int, mincached: int, maxcached: int,
+                 db: str, log=None):
+        self.user = user
+        self.password = password
+        self.host = host
+        self.port = port
+        self.db = db
+        self.min_cached = mincached
+        self.max_cached = maxcached
+        self.log = log
+        self.__connection = self.__get_connect()
+
+    def __get_connect(self):
+        # setsession=['SET AUTOCOMMIT = 1']是用来设置线程池是否打开自动更新的配置，0为False，1为True
+        return PooledDB(pymysql,
+                        host=self.host,
+                        user=self.user,
+                        passwd=self.password,
+                        db=self.db,
+                        port=self.port,
+                        mincached=self.min_cached,
+                        maxcached=self.max_cached)
+
+    def row_sql(self, sql, param=None, commit=False):
+        try:
+            conn = self.__connection.connection()  # 以后每次需要数据库连接就是用connection（）函数获取连接就好了
+            cur = conn.cursor(pymysql.cursors.DictCursor)
+            cur.execute(sql, param)
+            results = cur.fetchall()
+            if commit:
+                cur.commit()
+            conn.close()
+        except Exception as e:
+            if self.log:
+                self.log.error("{}, param={}, errmsg={}".format(sql, param, e))
+            return None
+        else:
+            if self.log:
+                self.log.debug("{}, param={}, success={}".format(sql, param, results))
+            return results
+

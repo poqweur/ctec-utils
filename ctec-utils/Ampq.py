@@ -10,7 +10,7 @@ class AsyncPublish:
     未测试异步发送队列
     """
 
-    def __init__(self, host, port, user, password, vhost):
+    def __init__(self, host: str, port: int, user: str, password: str, vhost: str, log=None):
         credentials = pika.PlainCredentials(user, password)
         self.parameters = pika.ConnectionParameters(host, port, vhost,
                                                     credentials)
@@ -19,6 +19,7 @@ class AsyncPublish:
         self.exchange = None
         self.data = ""
         self.routing_key = ""
+        self.log = log
 
     def get_connection(self):
         return pika.SelectConnection(parameters=self.parameters,
@@ -43,24 +44,35 @@ class AsyncPublish:
         except Exception as e:
             return e
 
-    def send(self, data, exchange, routing_key=""):
-        try:
-            self.data = data if isinstance(data, str) else json.dumps(data)
-            self.exchange = exchange
-            self.routing_key = routing_key
-            self.connection = self.get_connection()
-            self.connection.ioloop.start()
-        except KeyboardInterrupt:
-            self.stop()
-            if (self.connection is not None and
-                    not self.connection.is_closed):
-                # Finish closing
+    def send(self, data, exchange, routing_key="", flag=3):
+        if flag > 0:
+            try:
+                self.data = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
+                self.exchange = exchange
+                self.routing_key = routing_key
+                self.connection = self.get_connection()
                 self.connection.ioloop.start()
+                if self.log:
+                    self.log.debug("exchange={}, routing_key={}, data={} 发送成功".format(exchange, routing_key, data))
+            except KeyboardInterrupt:
+                self.stop()
+                if (self.connection is not None and
+                        not self.connection.is_closed):
+                    # Finish closing
+                    self.connection.ioloop.start()
+                flag -= 1
+                self.stop()
+                self.connection = self.get_connection()
+                self.send(data, exchange, routing_key)
+                return
+        else:
+            if self.log:
+                self.log.error("发送exchange={}, routing_key={}失败,数据：{}".format(exchange, routing_key, data))
 
 
 class Publish:
 
-    def __init__(self, host, port, user, password, vhost, log=None):
+    def __init__(self, host: str, port: int, user: str, password: str, vhost: str, log=None):
         self.params = {"host": host, "port": port, "user": user,
                        "password": password, "vhost": vhost}
         self.log = log
@@ -81,7 +93,7 @@ class Publish:
             return e
 
     def send(self, data, exchange, routing_key="", flag=3):
-        data = data if isinstance(data, str) else json.dumps(data)
+        data = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
         if flag > 0:
             try:
                 self.channel.basic_publish(exchange=exchange,
@@ -100,11 +112,11 @@ class Publish:
                 return e
         else:
             if self.log:
-                self.log.debug("发送exchange={}, routing_key={}失败,数据：{}".format(exchange, routing_key, data))
+                self.log.error("发送exchange={}, routing_key={}失败,数据：{}".format(exchange, routing_key, data))
 
 
 if __name__ == '__main__':
-    p = Publish("172.16.20.73", 5672, "smallrabbit", "123456", "order")
+    p = AsyncPublish("172.16.20.73", 5672, "smallrabbit", "123456", "order")
     for i in range(10):
         print(i)
-        print(p.send('{"ok": %d}' % i, 'wjy.test'))
+        print(p.send('{"中文": %d}' % i, 'wjy.test'))
