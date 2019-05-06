@@ -38,7 +38,8 @@ setup(
         "redis-py-cluster==1.3.4",
         "pymongo==3.8.0",
         "sqlalchemy==1.2.15",
-        "pymysql==0.9.3"
+        "pymysql==0.9.3",
+        "six==1.12.0"
     ],
     long_description=open(mdpath, encoding='utf-8').read(),
     long_description_content_type='text/markdown',

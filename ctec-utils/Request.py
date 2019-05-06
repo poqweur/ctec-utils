@@ -1,36 +1,106 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Author: Wjy
+import json
+import datetime
+import traceback
+
 import requests
+from requests.adapters import HTTPAdapter
+from Models import JournalLog, get_host_ip
+
+APP_NAME = "python3 project"
+IP = get_host_ip()
 
 
-def get(url, params=None, header=None, log=None):
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"}
+def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5) -> (int, str):
+    """
+    兼容http请求和https工具
+    :param url: 请求地址
+    :param params: url参数
+    :param header: 头信息
+    :param log: 日志对象
+    :param timeout: 超时时间
+    :return: 返回元组，0是请求成功，1是请求异常
+    """
+    code, response = 0, ""
+    journal_log = JournalLog(req_app_name=APP_NAME, req_time=datetime.datetime.now(), req_content=data,
+                             req_host=IP)
+
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/"
+                             "537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"}
     if header:
         headers.update(header)
     try:
-        response = requests.get(url=url, params=params, headers=headers)
+        request = requests.Session()
+        request.mount('http://', HTTPAdapter(max_retries=3))
+        request.mount('https://', HTTPAdapter(max_retries=3))
+        response = request.get(url=url, params=params, headers=headers, timeout=timeout)
     except Exception as e:
-        if log:
-            log.error("url={}, data={}, errmsg={}".format(url, params, e))
+        code, response = 1, "接口调用异常url={}, params={}, 异常信息={}".format(url, params, traceback.format_exc())
     else:
-        resp = response.content
-        if log and getattr(log, "external_log"):
-            log.external_log("url={}, data={}, result={}".format(url, params, resp))
-        return response.content
+        try:
+            response = response.json()
+        except ValueError:
+            response = response.content
+    finally:
+        journal_log.res_time = datetime.datetime.now()
+        journal_log.elapse_time = (journal_log.res_time - journal_log.req_time).total_seconds()
+        journal_log.req_time = journal_log.req_time.strftime("%Y-%m-%d %H:%M:%S.%f")
+        journal_log.res_time = journal_log.res_time.strftime("%Y-%m-%d %H:%M:%S.%f")
+        if log:
+            log.debug("end response={}".format(response))
+            if getattr(log, "external_log"):
+                journal_log.res_content = response
+                log.external_log(journal_log)
+
+        return code, response
 
 
-def post(url, data=None, params=None, header=None, log=None):
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"}
+def post(url, data=None, params: dict = None, header: dict = None, log=None, timeout: int = 5) -> (int, str):
+    """
+    兼容http请求和https工具
+    :param url: 请求地址
+    :param data: 请求体数据
+    :param params: url参数
+    :param header: 头信息
+    :param log: 日志对象
+    :param timeout: 超时时间
+    :return: 返回元组，0是请求成功，1是请求异常
+    """
+    data = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
+    code, response = 0, ""
+    if log:
+        log.debug("start url={}, data={}, params={}".format(url, data, params))
+    journal_log = JournalLog(req_app_name=APP_NAME, req_time=datetime.datetime.now(), req_content=data,
+                             req_host=IP)
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/"
+                             "537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"}
     if header:
         headers.update(header)
     try:
-        response = requests.post(url=url, data=data, params=params, headers=headers)
+        request = requests.Session()
+        # http请求最多重试3次
+        request.mount('http://', HTTPAdapter(max_retries=3))
+        # https请求最多重试3次
+        request.mount('https://', HTTPAdapter(max_retries=3))
+        response = request.post(url=url, data=data, params=params, headers=headers, timeout=timeout)
     except Exception as e:
-        if log:
-            log.error("url={}, data={}, errmsg={}".format(url, data, e))
+        code, response = 1, "接口调用异常url={}, data={}, params={}, 异常信息={}".format(url, data,
+                                                                               params, traceback.format_exc())
     else:
-        resp = response.content
-        if log and getattr(log, "external_log"):
-            log.external_log("url={}, data={}, result={}".format(url, data, resp))
-        return resp
+        try:
+            response = response.json()
+        except ValueError:
+            response = response.content
+    finally:
+        journal_log.res_time = datetime.datetime.now()
+        journal_log.elapse_time = (journal_log.res_time - journal_log.req_time).total_seconds()
+        journal_log.req_time = journal_log.req_time.strftime("%Y-%m-%d %H:%M:%S.%f")
+        journal_log.res_time = journal_log.res_time.strftime("%Y-%m-%d %H:%M:%S.%f")
+        if log:
+            log.debug("end response={}".format(response))
+            if getattr(log, "external_log"):
+                journal_log.res_content = response
+                log.external_log(journal_log)
+        return code, response

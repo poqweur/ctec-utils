@@ -1,6 +1,8 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Author: Wjy
+import traceback
+
 import cx_Oracle
 import pymysql
 from DBUtils.PooledDB import PooledDB
@@ -11,6 +13,9 @@ from pymongo import MongoClient
 class OraclePool(object):
     """
     封装cx_oracle，创建连接池对象
+
+    示例：
+        oracle = OraclePool(用户名, 密码, 'ip/库' 或 dsn, 最小连接数, 最大连接数)
     """
 
     def __init__(self, user: str, password: str, dsn: str, mincached: int, maxcached: int, threaded: bool = False,
@@ -48,7 +53,7 @@ class OraclePool(object):
             conn.close()
         except Exception as e:
             if self.log:
-                self.log.error("{}, params={}, errmsg={}".format(procedure_name, args, e))
+                self.log.error("{}, params={}, errmsg={}".format(procedure_name, args, traceback.format_exc()))
             return None
         else:
             for res in list(result.getvalue()):
@@ -68,7 +73,7 @@ class OraclePool(object):
             conn.close()
         except Exception as e:
             if self.log:
-                self.log.error("{}, params={}, errmsg={}".format(procedure_name, args, e))
+                self.log.error("{}, params={}, errmsg={}".format(procedure_name, args, traceback.format_exc()))
             return None
         else:
             if self.log:
@@ -86,7 +91,7 @@ class OraclePool(object):
             result = result_db.fetchall()
         except Exception as e:
             if self.log:
-                self.log.error("{}, params={}, errmsg={}".format(sql, param, e))
+                self.log.error("{}, params={}, errmsg={}".format(sql, param, traceback.format_exc()))
             return None
         else:
             if self.log:
@@ -102,11 +107,22 @@ class OraclePool(object):
 
 class RedisCluster(object):
     """
+    连接redis集群
 
+    示例：
+        redis_nodes = [
+            {'host': '10.128.112.111', 'port': 7001},
+            {'host': '10.128.112.111', 'port': 7002},
+        ]
+
+        redis = RedisCluster(redis_nodes)
+        conn = redis.conn
+        conn.get("键")
     """
 
     def __init__(self, redis_nodes: list):
         self.redis_nodes = redis_nodes
+        self.conn = self.get_conn()
 
     def get_conn(self):
         return StrictRedisCluster(startup_nodes=self.redis_nodes)
@@ -122,15 +138,16 @@ class MongodbCluster(object):
              {'host': '10.128.112.111', 'port': 7002},
         ]
 
-    todo: 未完成
+        mongodb = Mongodb("user", "password", mongodb_nodes)
+        mongodb.conn
     """
 
     def __init__(self, user: str, password: str, hosts: list):
         self.user = user
         self.password = password
-        self.conn = self.__get_connect(hosts)
+        self.conn = self.get_connect(hosts)
 
-    def __get_connect(self, hosts):
+    def get_connect(self, hosts):
         hosts_list = ",".join(["{}:{}".format(host["host"], host["port"]) for host in hosts])
         url = "mongodb://{user}:{password}@{list}".format(user=self.user, password=self.password, list=hosts_list)
         return MongoClient(url)
@@ -179,7 +196,7 @@ class MysqlPool(object):
             conn.close()
         except Exception as e:
             if self.log:
-                self.log.error("{}, param={}, errmsg={}".format(sql, param, e))
+                self.log.error("{}, param={}, errmsg={}".format(sql, param, traceback.format_exc()))
             return None
         else:
             if self.log:
