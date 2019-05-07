@@ -28,7 +28,7 @@ setup(
     author_email='1149447019@qq.com',  # 作者邮箱
     license='Apache License v2',
     package_data={'': ['*.*']},  # {'包名': ['正则']}
-    url='',
+    url='git@github.com:poqweur/ctec-utils.git',
     # install_requires=[str(ir.req) for ir in parse_requirements("requirements.txt", session=False)],  # 所需的运行环境
     install_requires=[
         "pika==0.13.1",
