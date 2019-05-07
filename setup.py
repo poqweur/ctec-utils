@@ -37,7 +37,7 @@ setup(
         "cx_Oracle==7.1.1",
         "redis-py-cluster==1.3.4",
         "pymongo==3.8.0",
-        "sqlalchemy==1.2.15",
+        "sqlalchemy==1.3.0",
         "pymysql==0.9.3",
         "six==1.12.0"
     ],
