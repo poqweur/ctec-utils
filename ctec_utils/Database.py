@@ -39,7 +39,14 @@ class OraclePool(object):
                         maxcached=self.max_cached,
                         threaded=self.threaded)
 
-    def procedure_cursor(self, procedure_name, *args, commit=False):
+    def procedure_cursor(self, procedure_name: str, *args, commit: bool = False):
+        """
+        存储过程返回游标对象
+        :param procedure_name: 存过名
+        :param args: 入参
+        :param commit: 是否commit
+        :return:
+        """
         return_list = []
         try:
             conn = self.__connection.connection()
@@ -62,7 +69,14 @@ class OraclePool(object):
                 self.log.debug("{}, params={}, result={}".format(procedure_name, args, return_list))
             return return_list
 
-    def procedure_string(self, procedure_name, *args, commit=False):
+    def procedure_string(self, procedure_name: str, *args, commit: bool = False):
+        """
+        存储过程返回值
+        :param procedure_name: 存过名
+        :param args: 入参
+        :param commit: 是否commit
+        :return:
+        """
         try:
             conn = self.__connection.connection()
             cursor = conn.cursor()
@@ -80,7 +94,18 @@ class OraclePool(object):
                 self.log.debug("{}, params={}, result={}".format(procedure_name, args, result))
             return result
 
-    def row_sql(self, sql, param, commit=False):
+    def row_sql(self, sql: str, param: dict, commit: bool = False):
+        """
+        原生sql
+
+        例如：
+            o = OraclePool("user", "password", 'dsn', 0, 1)
+            print(o.row_sql("select * from 表 where ROWNUM < :num", {"num": 10}))
+        :param sql: sql语句
+        :param param: 入参
+        :param commit: 是否commit
+        :return:
+        """
         try:
             conn = self.__connection.connection()
             cursor = conn.cursor()
@@ -186,6 +211,13 @@ class MysqlPool(object):
                         maxcached=self.max_cached)
 
     def row_sql(self, sql, param=None, commit=False):
+        """
+        暂时只提供原生sql
+        :param sql: sql语句
+        :param param: 参数
+        :param commit: 是否commit
+        :return:
+        """
         try:
             conn = self.__connection.connection()  # 以后每次需要数据库连接就是用connection（）函数获取连接就好了
             cur = conn.cursor(pymysql.cursors.DictCursor)
