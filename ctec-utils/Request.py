@@ -57,7 +57,7 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
         journal_log.req_time = journal_log.req_time.strftime("%Y-%m-%d %H:%M:%S.%f")
         journal_log.res_time = journal_log.res_time.strftime("%Y-%m-%d %H:%M:%S.%f")
         if log:
-            log.debug("end response={}".format(response))
+            log.debug("end url_params= {}, response={}".format(params, response))
             if getattr(log, "external_log"):
                 journal_log.res_content = response
                 log.external_log(journal_log)
@@ -111,7 +111,7 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
         journal_log.req_time = journal_log.req_time.strftime("%Y-%m-%d %H:%M:%S.%f")
         journal_log.res_time = journal_log.res_time.strftime("%Y-%m-%d %H:%M:%S.%f")
         if log:
-            log.debug("end response={}".format(response))
+            log.debug("end data= {}, response={}".format(data, response))
             if getattr(log, "external_log"):
                 journal_log.res_content = response
                 log.external_log(journal_log)

@@ -31,7 +31,7 @@ setup(
     url='',
     # install_requires=[str(ir.req) for ir in parse_requirements("requirements.txt", session=False)],  # 所需的运行环境
     install_requires=[
-        "pika==0.11.0",
+        "pika==0.13.1",
         "requests==2.20.0",
         "DBUtils==1.3",
         "cx_Oracle==7.1.1",

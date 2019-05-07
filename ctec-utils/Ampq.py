@@ -116,10 +116,3 @@ class Publish:
         else:
             if self.log:
                 self.log.error("发送exchange={}, routing_key={}失败,数据：{}".format(exchange, routing_key, data))
-
-
-if __name__ == '__main__':
-    p = AsyncPublish("172.16.20.73", 5672, "smallrabbit", "123456", "order")
-    for i in range(10):
-        print(i)
-        print(p.send('{"中文": %d}' % i, 'wjy.test'))
