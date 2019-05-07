@@ -81,7 +81,9 @@ class OraclePool(object):
             conn = self.__connection.connection()
             cursor = conn.cursor()
             result = cursor.var(cx_Oracle.STRING)
-            cursor.callproc(procedure_name, args)
+            params = list(args)
+            params.append(result)
+            cursor.callproc(procedure_name, params)
             if commit:
                 conn.commit()
             conn.close()
@@ -92,7 +94,7 @@ class OraclePool(object):
         else:
             if self.log:
                 self.log.debug("{}, params={}, result={}".format(procedure_name, args, result))
-            return result
+            return result.getvalue()
 
     def row_sql(self, sql: str, param: dict, commit: bool = False):
         """
