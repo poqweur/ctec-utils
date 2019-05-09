@@ -10,9 +10,10 @@ Based on the package
 - cx_Oracle==7.1.1
 - redis-py-cluster==1.3.4
 - pymongo==3.8.0
-- sqlalchemy==1.2.15
 - pymysql==0.9.3
 - six==1.12.0
+- kafka-python==1.4.6
+- logstash-formatter==0.5.17
 
 
 *The sample code*

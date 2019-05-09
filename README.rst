@@ -12,7 +12,8 @@ Based on the package
 - pymongo==3.8.0
 - sqlalchemy==1.2.15
 - pymysql==0.9.3
-- six==1.12.0
+- kafka-python==1.4.6
+- logstash-formatter==0.5.17
 
 
 *The sample code*
