@@ -8,10 +8,7 @@ import uuid
 
 import requests
 from requests.adapters import HTTPAdapter
-from Models import JournalLog, get_host_ip
-
-APP_NAME = "python3 project"
-IP = get_host_ip()
+from Models import InsideOutside
 
 
 def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5, transaction_id: str="") -> (int, str):
@@ -30,13 +27,14 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
         log.debug("start url={}, params={}".format(url, params))
     if not transaction_id:
         transaction_id = str(uuid.uuid4()).replace("-", "")
-    journal_log = JournalLog(req_app_name=APP_NAME, req_time=datetime.datetime.now(), req_content=str(params),
-                             req_host=IP, transaction_id=transaction_id)
 
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/"
                              "537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"}
     if header:
         headers.update(header)
+    journal_log = InsideOutside(transaction_id=transaction_id, dialog_type="out", address=url, http_method="GET",
+                                key_param=str(params), request_payload=str(params), request_headers=headers)
+    journal_log.request_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     try:
         request = requests.Session()
         # http请求最多重试3次
@@ -47,20 +45,21 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
     except Exception as e:
         code, response = 1, "接口调用异常url={}, params={}, 异常信息={}".format(url, params, traceback.format_exc())
     else:
+        journal_log.response_headers = str(response.headers)
+        journal_log.response_code = response.status_code
         try:
             response = response.json()
         except ValueError:
             response = response.content
     finally:
-        journal_log.res_time = datetime.datetime.now()
-        journal_log.elapse_time = (journal_log.res_time - journal_log.req_time).total_seconds()
-        journal_log.req_time = journal_log.req_time.strftime("%Y-%m-%d %H:%M:%S.%f")
-        journal_log.res_time = journal_log.res_time.strftime("%Y-%m-%d %H:%M:%S.%f")
+        journal_log.response_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        journal_log.response_payload = str(response)
+
         if log:
             log.debug("end url_params= {}, response={}".format(params, response))
             if getattr(log, "external_log"):
                 journal_log.res_content = response
-                log.external_log(journal_log)
+                log.external(extra=journal_log.__dict__)
 
         return code, response
 
@@ -84,12 +83,14 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
         log.debug("start url={}, data={}, params={}".format(url, data, params))
     if not transaction_id:
         transaction_id = str(uuid.uuid4()).replace("-", "")
-    journal_log = JournalLog(req_app_name=APP_NAME, req_time=datetime.datetime.now(), req_content=data,
-                             req_host=IP, transaction_id=transaction_id)
+
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/"
                              "537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"}
     if header:
         headers.update(header)
+
+    journal_log = InsideOutside(transaction_id=transaction_id, dialog_type="out", address=url, http_method="POST",
+                                key_param=str(data), request_payload=str(data), request_headers=headers)
     try:
         request = requests.Session()
         # http请求最多重试3次
@@ -101,18 +102,18 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
         code, response = 1, "接口调用异常url={}, data={}, params={}, 异常信息={}".format(url, data,
                                                                                params, traceback.format_exc())
     else:
+        journal_log.response_code = response.status_code
+        journal_log.response_headers = response.headers
         try:
             response = response.json()
         except ValueError:
             response = response.content
     finally:
-        journal_log.res_time = datetime.datetime.now()
-        journal_log.elapse_time = (journal_log.res_time - journal_log.req_time).total_seconds()
-        journal_log.req_time = journal_log.req_time.strftime("%Y-%m-%d %H:%M:%S.%f")
-        journal_log.res_time = journal_log.res_time.strftime("%Y-%m-%d %H:%M:%S.%f")
+        journal_log.response_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        journal_log.response_payload = str(response)
         if log:
             log.debug("end data= {}, response={}".format(data, response))
             if getattr(log, "external_log"):
                 journal_log.res_content = response
-                log.external_log(journal_log)
+                log.external(extra=journal_log.__dict__)
         return code, response

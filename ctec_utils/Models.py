@@ -8,9 +8,57 @@ import socket
 MACHINE_NAME = os.environ.get("HOSTNAME", "") + os.environ.get("hostname", "")
 
 
+class InsideOutside:
+    """
+    三期改造内外部流水模型
+    """
+
+    def __init__(self, transaction_id: str = "",
+                 dialog_type: str = "in",
+                 request_time=None,
+                 response_time=None,
+                 address: str = "",
+                 http_method: str = "",
+                 key_type: str = "",
+                 key_param: str = "",
+                 request_payload: str = "",
+                 response_payload: str = "",
+                 request_headers: dict = "",
+                 response_headers: dict = "",
+                 response_code: int = ""):
+        """
+        :param transaction_id: 流水id
+        :param dialog_type: in / out 内部流水日志 / 外部流水日志
+        :param request_time: 请求时间
+        :param response_time: 响应时间
+        :param address: 访问地址
+        :param http_method: 请求方式
+        :param key_type: 核心关键参数类型(详见S_DIC.KEY_TYPE)
+        :param key_param: 核心关键参数(比如order_id)
+        :param request_payload: 请求参数
+        :param response_payload: 响应参数
+        :param request_headers: 头部信息
+        :param response_headers: 头部信息
+        :param response_code: 响应码
+        """
+        self.transaction_id: str = transaction_id
+        self.dialog_type: str = dialog_type
+        self.request_time = request_time
+        self.response_time = response_time
+        self.address: str = address
+        self.http_method: str = http_method
+        self.key_type: str = key_type
+        self.key_param: str = key_param
+        self.request_payload: str = request_payload
+        self.response_payload: str = response_payload
+        self.request_headers: dict = request_headers
+        self.response_headers: dict = response_headers
+        self.response_code: int = response_code
+
+
 class JournalLog:
     """
-    新流水日志
+    (宽带)流水日志
     """
 
     def __init__(self, req_app_name: str = "",
