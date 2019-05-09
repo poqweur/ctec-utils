@@ -89,9 +89,29 @@ print(code, response)
 ```
 ### Work template
 ```python
-from ctec_utils import InternalLog, ExternalInterfaceLoggingEvent, OrderJournalEvent, IssueJobJournal
-# 内部流水日志模型、 外部流水日志模型、 订单流水日志模型、 业务层流水日志模型
+from ctec_utils.Models import InsideOutside, InternalLog, ExternalInterfaceLoggingEvent, OrderJournalEvent, IssueJobJournal
+# (三期)内外部流水日志模型、(宽带)内部流水日志模型、 外部流水日志模型、 订单流水日志模型、 业务层流水日志模型
 ```
+### KafkaLoggingHandler、ThirdLog
+```
+from ctec_utils.KafkaHandler import KafkaLoggingHandler, ThirdLog
+
+
+newLog = ThirdLog("ctec-utils", "sd", "ctec-utils")
+fh = logging.FileHandler('test.log')
+formatter = logging.Formatter("[%(asctime)s] %(levelname)s::(%(process)d %(thread)d)::%(module)s(%(funcName)s:%(lineno)d): %(message)s")
+fh.setFormatter(formatter)
+newLog.setLevel(logging.DEBUG)
+newLog.addHandler(fh)
+newLog.addHandler(KafkaLoggingHandler("10.128.113.161:9092,10.128.113.162:9092,10.128.113.163:9092", "super_topic_test",))
+
+newLog.info('logger info message')
+newLog.warning('logger warning message')
+newLog.error('logger error message')
+newLog.critical('logger critical message')
+
+```
+
 
 打包命令
 
