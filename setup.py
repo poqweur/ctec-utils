@@ -17,7 +17,7 @@ with open(join(dirname(__file__), './VERSION.txt'), 'rb') as f:
         作为一个合格的模块，应该有版本号
     '''
 
-mdpath = "./README.md"
+mdpath = "./README.rst"
 
 setup(
     name='ctec-utils',  # 模块名
@@ -43,7 +43,7 @@ setup(
         "kafka-python==1.4.6",
         "logstash-formatter==0.5.17"
     ],
-    long_description=open(mdpath, "r").read() + "\n\n",
+    long_description=open(mdpath, "r", encoding="utf-8").read() + "\r\n",
     long_description_content_type='text/markdown',
     data_files=[mdpath],
     zip_safe=False,
