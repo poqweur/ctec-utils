@@ -13,7 +13,7 @@ from kafka.producer import SimpleProducer, KeyedProducer
 from logstash_formatter import LogstashFormatterV1, LogstashFormatter
 
 
-remove_list = ["name", "msg", "args", "levelname", "levelno", "lineno", "stack_info"]
+REMOVE_LIST = ["name", "msg", "args", "levelname", "levelno", "lineno", "stack_info"]
 
 
 class LogstashFormatterV2(LogstashFormatter):
@@ -25,7 +25,7 @@ class LogstashFormatterV2(LogstashFormatter):
 
         fields = record.__dict__.copy()
 
-        for i in remove_list:
+        for i in REMOVE_LIST:
             fields.pop(i)
 
         if 'msg' in fields and isinstance(fields['msg'], dict):
