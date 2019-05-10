@@ -4,14 +4,72 @@
 
 import logging
 import logging.config
+import traceback as tb
+import datetime
+import json
 
 from kafka.client import KafkaClient, SimpleClient
 from kafka.producer import SimpleProducer, KeyedProducer
 from logstash_formatter import LogstashFormatterV1, LogstashFormatter
 
+
+remove_list = ["name", "msg", "args", "levelname", "levelno", "lineno", "stack_info"]
+
+
+class LogstashFormatterV2(LogstashFormatter):
+
+    def format(self, record):
+        """
+        重写模板，删除不需要或重复的key
+        """
+
+        fields = record.__dict__.copy()
+
+        for i in remove_list:
+            fields.pop(i)
+
+        if 'msg' in fields and isinstance(fields['msg'], dict):
+            msg = fields.pop('msg')
+            fields.update(msg)
+
+        elif 'msg' in fields and 'message' not in fields:
+            msg = record.getMessage()
+            fields.pop('msg')
+
+            try:
+                msg = msg.format(**fields)
+            except (KeyError, IndexError):
+                pass
+            except:
+                msg = msg
+            fields['message'] = msg
+
+        if 'exc_info' in fields:
+            if fields['exc_info']:
+                formatted = tb.format_exception(*fields['exc_info'])
+                fields['exception'] = formatted
+            fields.pop('exc_info')
+
+        if 'exc_text' in fields and not fields['exc_text']:
+            fields.pop('exc_text')
+
+        now = datetime.datetime.utcnow()
+        base_log = {'@timestamp': now.strftime("%Y-%m-%dT%H:%M:%S") +
+                    ".%03d" % (now.microsecond / 1000) + "Z",
+                    '@version': 1,
+                    'source_host': self.source_host}
+        base_log.update(fields)
+
+        logr = self.defaults.copy()
+        logr.update(base_log)
+
+        return json.dumps(logr, default=self.json_default, cls=self.json_cls)
+
+
 MODEL = {
-    0: LogstashFormatterV1,
-    1: LogstashFormatter
+    0: LogstashFormatterV2,
+    1: LogstashFormatterV1,
+    2: LogstashFormatter
 }
 
 
@@ -60,6 +118,8 @@ class KafkaLoggingHandler(logging.Handler):
                 raise
             except:
                 self.__init__(self.hosts_list, self.topic, self.timeout_secs, self.model, **self.kwargs)
+                flag -= 1
+                self.emit(record, flag)
                 # self.handleError(record)
         else:
             self.handleError(record)

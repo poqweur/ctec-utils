@@ -47,6 +47,7 @@ class OraclePool(object):
         :param commit: 是否commit
         :return:
         """
+        conn = None
         return_list = []
         try:
             conn = self.__connection.connection()
@@ -59,6 +60,8 @@ class OraclePool(object):
                 conn.commit()
             conn.close()
         except Exception as e:
+            if conn:
+                self.rollback(conn)
             if self.log:
                 self.log.error("{}, params={}, errmsg={}".format(procedure_name, args, traceback.format_exc()))
             return None
@@ -77,6 +80,7 @@ class OraclePool(object):
         :param commit: 是否commit
         :return:
         """
+        conn = None
         try:
             conn = self.__connection.connection()
             cursor = conn.cursor()
@@ -88,6 +92,8 @@ class OraclePool(object):
                 conn.commit()
             conn.close()
         except Exception as e:
+            if conn:
+                self.rollback(conn)
             if self.log:
                 self.log.error("{}, params={}, errmsg={}".format(procedure_name, args, traceback.format_exc()))
             return None
@@ -108,6 +114,7 @@ class OraclePool(object):
         :param commit: 是否commit
         :return:
         """
+        conn = None
         try:
             conn = self.__connection.connection()
             cursor = conn.cursor()
@@ -117,6 +124,8 @@ class OraclePool(object):
                 cursor.commit()
             result = result_db.fetchall()
         except Exception as e:
+            if conn:
+                self.rollback(conn)
             if self.log:
                 self.log.error("{}, params={}, errmsg={}".format(sql, param, traceback.format_exc()))
             return None
@@ -130,6 +139,9 @@ class OraclePool(object):
                     return_result.append(dict(zip(key_list, value)))
                 return return_result
             return result
+
+    def rollback(self, conn):
+        conn.rollback()
 
 
 class RedisCluster(object):
@@ -220,6 +232,7 @@ class MysqlPool(object):
         :param commit: 是否commit
         :return:
         """
+        conn = None
         try:
             conn = self.__connection.connection()  # 以后每次需要数据库连接就是用connection（）函数获取连接就好了
             cur = conn.cursor(pymysql.cursors.DictCursor)
@@ -229,6 +242,8 @@ class MysqlPool(object):
                 cur.commit()
             conn.close()
         except Exception as e:
+            if conn:
+                self.rollback(conn)
             if self.log:
                 self.log.error("{}, param={}, errmsg={}".format(sql, param, traceback.format_exc()))
             return None
@@ -236,4 +251,7 @@ class MysqlPool(object):
             if self.log:
                 self.log.debug("{}, param={}, success={}".format(sql, param, results))
             return results
+
+    def rollback(self, conn):
+        conn.rollback()
 
