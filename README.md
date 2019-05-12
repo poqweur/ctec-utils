@@ -104,7 +104,7 @@ formatter = logging.Formatter("[%(asctime)s] %(levelname)s::(%(process)d %(threa
 fh.setFormatter(formatter)
 newLog.setLevel(logging.DEBUG)
 newLog.addHandler(fh)
-newLog.addHandler(KafkaLoggingHandler("10.128.113.161:9092,10.128.113.162:9092,10.128.113.163:9092", "super_topic_test",))
+newLog.addHandler(KafkaLoggingHandler("ip:port", "super_topic_test",))
 
 newLog.info('logger info message')
 newLog.warning('logger warning message')
