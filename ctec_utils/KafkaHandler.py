@@ -12,8 +12,8 @@ from kafka.client import KafkaClient, SimpleClient
 from kafka.producer import SimpleProducer, KeyedProducer
 from logstash_formatter import LogstashFormatterV1, LogstashFormatter
 
-
-REMOVE_LIST = ["name", "msg", "args", "levelname", "levelno", "lineno", "stack_info"]
+# 可根据需要删除发送字段
+REMOVE_LIST = []
 
 
 class LogstashFormatterV2(LogstashFormatter):
