@@ -91,7 +91,7 @@ print(code, response)
 ### Work template
 ```python
 from ctec_utils.Models import InsideOutside, InternalLog, ExternalInterfaceLoggingEvent, OrderJournalEvent, IssueJobJournal
-# (三期)内外部流水日志模型、(宽带)内部流水日志模型、 外部流水日志模型、 订单流水日志模型、 业务层流水日志模型
+# (新)内外部流水日志模型、(旧)内部流水日志模型、 外部流水日志模型、 订单流水日志模型、 业务层流水日志模型
 ```
 ### KafkaLoggingHandler、ThirdLog
 ```
