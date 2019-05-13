@@ -11,7 +11,8 @@ from requests.adapters import HTTPAdapter
 from Models import InsideOutside
 
 
-def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5, transaction_id: str="") -> (int, str):
+def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5, transaction_id: str="",
+        is_external: bool = True) -> (int, str):
     """
     兼容http请求和https工具
     :param url: 请求地址
@@ -20,6 +21,7 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
     :param log: 日志对象
     :param timeout: 超时时间
     :param transaction_id: 流水号， 没有则会自动创建
+    :param is_external: 是否记录外部流水
     :return: 返回元组，0是请求成功 响应体，1是请求异常 异常描述
     """
     code, response = 0, ""
@@ -57,7 +59,7 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
 
         if log:
             log.debug("end url_params= {}, response={}".format(params, response))
-            if getattr(log, "external_log"):
+            if is_external and getattr(log, "external_log"):
                 journal_log.res_content = response
                 log.external(extra=journal_log.__dict__)
 
@@ -65,7 +67,7 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
 
 
 def post(url, data=None, params: dict = None, header: dict = None, log=None, timeout: int = 5,
-         transaction_id: str = "") -> (int, str):
+         transaction_id: str = "", is_external: bool = True) -> (int, str):
     """
     兼容http请求和https工具
     :param url: 请求地址
@@ -75,6 +77,7 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
     :param log: 日志对象
     :param timeout: 超时时间
     :param transaction_id: 流水号， 没有则会自动创建
+    :param is_external: 是否记录外部流水
     :return: 返回元组，0是请求成功 响应体，1是请求异常 异常描述
     """
     data = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
@@ -113,7 +116,7 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
         journal_log.response_payload = str(response)
         if log:
             log.debug("end data= {}, response={}".format(data, response))
-            if getattr(log, "external_log"):
+            if is_external and getattr(log, "external_log"):
                 journal_log.res_content = response
                 log.external(extra=journal_log.__dict__)
         return code, response
