@@ -49,8 +49,10 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
     except Exception as e:
         code, response = 1, "接口调用异常url={}, params={}, 异常信息={}".format(url, params, traceback.format_exc())
     else:
+        # 设置返回码
+        code = response.status_code
         # 记录响应头
-        journal_log.response_headers = str(response.headers)
+        journal_log.response_headers = response.headers
         # 记录响应状态
         journal_log.response_code = response.status_code
         try:
@@ -70,7 +72,6 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
         journal_log.request_time = journal_log.request_time.strftime("%Y-%m-%d %H:%M:%S.%f")
         # 将响应时间对西昂转成字符串
         journal_log.response_time = journal_log.response_time.strftime("%Y-%m-%d %H:%M:%S.%f")
-        print("响应时间", jet_lag)
         if log:
             if is_external and getattr(log, "external_log"):
                 journal_log.res_content = response
@@ -79,7 +80,7 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
             else:
                 log.debug("end params= {}, response={}, 响应时间={}".format(params, response, jet_lag))
 
-        return code, response
+        return code, {"body": response, "header": journal_log.response_headers}
 
 
 def post(url, data=None, params: dict = None, header: dict = None, log=None, timeout: int = 5,
@@ -123,6 +124,7 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
         code, response = 1, "接口调用异常url={}, data={}, params={}, 异常信息={}".format(url, data,
                                                                                params, traceback.format_exc())
     else:
+        code = response.status_code
         # 记录响应状态
         journal_log.response_code = response.status_code
         # 记录响应头
@@ -151,4 +153,4 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
                              extra=journal_log.__dict__)
             else:
                 log.debug("end data= {}, response={}, 响应时间={}".format(data, response, jet_lag))
-        return code, response
+        return code, {"body": response, "header": journal_log.response_headers}
