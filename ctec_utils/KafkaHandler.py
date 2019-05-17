@@ -8,6 +8,7 @@ import traceback as tb
 import datetime
 import json
 
+from kafka import KafkaProducer
 from kafka.client import KafkaClient, SimpleClient
 from kafka.producer import SimpleProducer, KeyedProducer
 from logstash_formatter import LogstashFormatterV1, LogstashFormatter
@@ -74,6 +75,56 @@ MODEL = {
 
 
 class KafkaLoggingHandler(logging.Handler):
+    """
+    异步发送
+    """
+
+    def __init__(self, hosts_list: str or list, topic: str, timeout_secs: int = 120, model: int = 0, **kwargs):
+        self.hosts_list = hosts_list
+        self.topic = topic
+        self.timeout_secs = timeout_secs
+        self.model = model
+        self.kwargs = kwargs
+
+        logging.Handler.__init__(self)
+        self.formatter = MODEL[model]()
+        self.kafka_topic_name = topic
+        self.producer = KafkaProducer(bootstrap_servers=hosts_list, reconnect_backoff_ms=timeout_secs, retries=1)
+
+    def emit(self, record, flag=3):
+        if flag > 0:
+            # drop kafka logging to avoid infinite recursion
+            if record.name == 'kafka':
+                return
+            try:
+                # use default formatting
+                msg = self.format(record)
+                if isinstance(msg, str):
+                    msg = msg.encode("utf-8")
+
+                # produce message
+                self.producer.send(topic=self.kafka_topic_name, value=msg)
+                self.producer.flush()
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except:
+                self.__init__(self.hosts_list, self.topic, self.timeout_secs, self.model, **self.kwargs)
+                flag -= 1
+                self.emit(record, flag)
+                # self.handleError(record)
+        else:
+            self.handleError(record)
+
+    def close(self):
+        if self.producer is not None:
+            self.producer.close()
+        logging.Handler.close(self)
+
+
+class KafkaLoggingHandler2(logging.Handler):
+    """
+    简单发送
+    """
 
     def __init__(self, hosts_list: str or list, topic: str, timeout_secs: int = 120, model: int = 0, **kwargs):
         self.hosts_list = hosts_list
@@ -131,6 +182,9 @@ class KafkaLoggingHandler(logging.Handler):
 
 
 class ThirdLog(logging.Logger):
+    """
+    三期日志模型
+    """
 
     def __init__(self, name: str, hostname: str, logger_name: str):
         """

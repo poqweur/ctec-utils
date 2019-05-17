@@ -55,6 +55,9 @@ class InsideOutside:
         self.response_headers: dict = response_headers
         self.response_code: int = response_code
 
+    def json(self):
+        return json.dumps(self.__dict__, ensure_ascii=False)
+
 
 class JournalLog:
     """
