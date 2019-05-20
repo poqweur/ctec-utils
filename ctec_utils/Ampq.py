@@ -73,13 +73,23 @@ class AsyncPublish:
 
 
 class Publish:
+    """
+    同步rabbitmq队列
+    """
 
-    def __init__(self, host: str, port: int, user: str, password: str, vhost: str, log=None):
+    def __init__(self, host: str, port: int, user: str, password: str, vhost: str, log=None, flag=3):
         self.params = {"host": host, "port": port, "user": user,
                        "password": password, "vhost": vhost}
         self.log = log
-        self.connection = self.get_connection()
-        self.channel = self.connection.channel()
+        if flag > 0:
+            try:
+                self.connection = self.get_connection()
+                self.channel = self.connection.channel()
+            except Exception as e:
+                if self.log:
+                    self.log.error("创建队列对象失败-->%s" % e.args)
+                flag -= 1
+                self.__init__(host=host, port=port, user=user, password=password, vhost=vhost, log=log, flag=flag)
 
     def get_connection(self):
         credentials = pika.PlainCredentials(self.params["user"], self.params["password"])
