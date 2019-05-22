@@ -253,5 +253,13 @@ class MysqlPool(object):
             return results
 
     def rollback(self, conn):
-        conn.rollback()
+        """
+        尝试回滚
+        :param conn:
+        :return:
+        """
+        try:
+            conn.rollback()
+        except:
+            pass
 
