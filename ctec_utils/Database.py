@@ -122,7 +122,7 @@ class OraclePool(object):
             result_db = cursor.execute(sql, param)
             if commit:
                 conn.commit()
-                result = result_db.rowcount
+                result = cursor.rowcount
             else:
                 result = result_db.fetchall()
         except Exception as e:
