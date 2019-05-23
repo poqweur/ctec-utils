@@ -73,7 +73,7 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
         # 将响应时间对西昂转成字符串
         journal_log.response_time = journal_log.response_time.strftime("%Y-%m-%d %H:%M:%S.%f")
         if log:
-            if is_external and getattr(log, "external_log"):
+            if is_external and getattr(log, "external"):
                 journal_log.res_content = response
                 log.external(msg="end params= {}, response={}=, 响应时间={}".format(params, response, jet_lag),
                              extra=journal_log.__dict__)
@@ -147,7 +147,7 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
         # 将响应时间对西昂转成字符串
         journal_log.response_time = journal_log.response_time.strftime("%Y-%m-%d %H:%M:%S.%f")
         if log:
-            if is_external and getattr(log, "external_log"):
+            if is_external and getattr(log, "external"):
                 journal_log.res_content = response
                 log.external(msg="end data= {}, response={}, 响应时间={}".format(data, response, jet_lag),
                              extra=journal_log.__dict__)
