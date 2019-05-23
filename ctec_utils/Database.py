@@ -121,8 +121,10 @@ class OraclePool(object):
             return_result = list()
             result_db = cursor.execute(sql, param)
             if commit:
-                cursor.commit()
-            result = result_db.fetchall()
+                conn.commit()
+                result = result_db.rowcount
+            else:
+                result = result_db.fetchall()
         except Exception as e:
             if conn:
                 self.rollback(conn)
@@ -236,10 +238,12 @@ class MysqlPool(object):
         try:
             conn = self.__connection.connection()  # 以后每次需要数据库连接就是用connection（）函数获取连接就好了
             cur = conn.cursor(pymysql.cursors.DictCursor)
-            cur.execute(sql, param)
-            results = cur.fetchall()
+            result = cur.execute(sql, param)
             if commit:
-                cur.commit()
+                conn.commit()
+                results = result.rowcount
+            else:
+                results = cur.fetchall()
             conn.close()
         except Exception as e:
             if conn:
@@ -262,4 +266,3 @@ class MysqlPool(object):
             conn.rollback()
         except:
             pass
-
