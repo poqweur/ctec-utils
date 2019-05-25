@@ -30,8 +30,8 @@ print(result)
 from cetc_utils import RedisCluster
 
 redis_nodes = [
-    {"host": "172.16.50.1", "port": 7001},
-    {"host": "172.16.50.2", "port": 7002},
+    {"host": "host", "port": port1},
+    {"host": "host", "port": port2},
 ]
 
 re = RedisCluster(redis_nodes).get_conn()
@@ -45,8 +45,8 @@ for i in range(14900000011, 14900000021):
 from cetc_utils import MongodbCluster
 
 mongodb_nodes = [
-    {"host": "172.16.50.1", "port": 7001},
-    {"host": "172.16.50.2", "port": 7002},
+    {"host": "host", "port": port},
+    {"host": "host", "port": port},
 ]
 
 m = MongodbCluster("user", "password", mongodb_nodes)
