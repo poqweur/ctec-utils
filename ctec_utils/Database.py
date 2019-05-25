@@ -152,8 +152,8 @@ class RedisCluster(object):
 
     示例：
         redis_nodes = [
-            {'host': '172.16.0.1', 'port': 7001},
-            {'host': '172.16.0.2', 'port': 7002},
+            {'host': 'host', 'port': port},
+            {'host': 'host', 'port': port},
         ]
 
         redis = RedisCluster(redis_nodes)
@@ -175,8 +175,8 @@ class MongodbCluster(object):
 
     示例：
         mongodb_nodes = [
-             {'host': '172.16.0.1', 'port': 7001},
-             {'host': '172.16.0.2', 'port': 7002},
+             {'host': 'host', 'port': port},
+             {'host': 'host', 'port': port},
         ]
 
         mongodb = Mongodb("user", "password", mongodb_nodes)
