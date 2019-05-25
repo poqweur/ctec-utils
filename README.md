@@ -21,7 +21,7 @@ Based on the package
 ```python
 from cetc_utils import OraclePool
 
-db = OraclePool("e_tyxb_log", "e_tyxb_log", "172.16.50.67/orcl",0, 1)
+db = OraclePool("user", "password", "dsn",0, 1)
 result = db.procedure_cursor("存储过程", "入参")
 print(result)
 ```
