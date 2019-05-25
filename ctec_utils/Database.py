@@ -179,19 +179,30 @@ class MongodbCluster(object):
              {'host': '172.16.0.2', 'port': 7002},
         ]
 
-        mongodb = Mongodb("user", "password", mongodb_nodes)
+        mongodb = Mongodb("user", "password", mongodb_nodes, **kwargs)
         mongodb.conn
     """
 
-    def __init__(self, user: str, password: str, hosts: list):
+    def __init__(self, user: str = "", password: str = "", hosts: list = None, **kwargs):
         self.user = user
         self.password = password
+        self.kwargs = kwargs
         self.conn = self.get_connect(hosts)
 
     def get_connect(self, hosts):
-        hosts_list = ",".join(["{}:{}".format(host["host"], host["port"]) for host in hosts])
-        url = "mongodb://{user}:{password}@{list}".format(user=self.user, password=self.password, list=hosts_list)
-        return MongoClient(url)
+        db = self.kwargs.get("db")
+        if self.user:
+            hosts_list = ",".join(["{}:{}".format(host["host"], host["port"]) for host in hosts])
+            url = "mongodb://{user}:{password}@{list}/".format(user=self.user, password=self.password, list=hosts_list)
+            if db:
+                url += db
+            return MongoClient(url)
+        else:
+            hosts_list = ",".join(["{}:{}".format(host["host"], host["port"]) for host in hosts])
+            url = "mongodb://{list}/".format(list=hosts_list)
+            if db:
+                url += db
+            return MongoClient(url)
 
 
 class MysqlPool(object):
@@ -266,3 +277,11 @@ class MysqlPool(object):
             conn.rollback()
         except:
             pass
+
+
+if __name__ == '__main__':
+    m = MongodbCluster(user="m_order", password="t&RUVjE#XqDa",
+                       hosts=[{"host": "172.16.50.36", "port": 27017}], db="thd_order")
+    conn = m.conn["thd_order"]
+    get_collection = conn.get_collection("foo")
+    print(get_collection.find_one())
