@@ -277,11 +277,3 @@ class MysqlPool(object):
             conn.rollback()
         except:
             pass
-
-
-if __name__ == '__main__':
-    m = MongodbCluster(user="m_order", password="t&RUVjE#XqDa",
-                       hosts=[{"host": "172.16.50.36", "port": 27017}], db="thd_order")
-    conn = m.conn["thd_order"]
-    get_collection = conn.get_collection("foo")
-    print(get_collection.find_one())
