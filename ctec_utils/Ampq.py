@@ -77,9 +77,10 @@ class Publish:
     同步rabbitmq队列
     """
 
-    def __init__(self, host: str, port: int, user: str, password: str, vhost: str, log=None, flag=3):
+    def __init__(self, host: str, port: int, user: str, password: str, vhost: str, heartbeat: int = 60,
+                 log=None, flag=3):
         self.params = {"host": host, "port": port, "user": user,
-                       "password": password, "vhost": vhost}
+                       "password": password, "vhost": vhost, "heartbeat": heartbeat}
         self.log = log
         if flag > 0:
             try:
@@ -94,7 +95,7 @@ class Publish:
     def get_connection(self):
         credentials = pika.PlainCredentials(self.params["user"], self.params["password"])
         parameters = pika.ConnectionParameters(self.params["host"], self.params["port"], self.params["vhost"],
-                                               credentials)
+                                               credentials, heartbeat=self.params["heartbeat"])
         return pika.BlockingConnection(parameters=parameters)
 
     def stop(self):
@@ -126,3 +127,6 @@ class Publish:
         else:
             if self.log:
                 self.log.error("发送exchange={}, routing_key={}失败,数据：{}".format(exchange, routing_key, data))
+
+    def __del__(self):
+        self.stop()
