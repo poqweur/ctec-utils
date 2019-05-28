@@ -21,7 +21,7 @@ Based on the package
 ```python
 from cetc_utils import OraclePool
 
-db = OraclePool("user", "name", "dsn",0, 1)
+db = OraclePool("user", "password", "dsn",0, 1)
 result = db.procedure_cursor("存储过程", "入参")
 print(result)
 ```
@@ -30,8 +30,8 @@ print(result)
 from cetc_utils import RedisCluster
 
 redis_nodes = [
-    {"host": "ip", "port": 7001},
-    {"host": "ip", "port": 7002},
+    {"host": "host", "port": port1},
+    {"host": "host", "port": port2},
 ]
 
 re = RedisCluster(redis_nodes).get_conn()
@@ -45,8 +45,8 @@ for i in range(14900000011, 14900000021):
 from cetc_utils import MongodbCluster
 
 mongodb_nodes = [
-    {"host": "ip", "port": 7001},
-    {"host": "ip", "port": 7002},
+    {"host": "host", "port": port},
+    {"host": "host", "port": port},
 ]
 
 m = MongodbCluster("user", "password", mongodb_nodes)
