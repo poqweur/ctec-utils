@@ -142,8 +142,40 @@ class OraclePool(object):
                 return return_result
             return result
 
+    def row_sql_list(self, sql_list: list):
+        """
+        多sql提交
+        :param sql_list: {"sql": "UPDATE 表 SET ORDER_STATUS = :order_status WHERE ORDER_ID = :order_id",
+             "params": {"order_id": "1234567", "order_status": "Z0101"}},
+            {
+                "sql": "insert into 表1(ID, BUSINESS_ID, ORDER_ID) values(:id, :business_id, :order_id)",
+                "params": {"id": "555555", "business_id": "6666666", "order_id": "7777777"}
+            }
+        :return:
+        """
+        conn = None
+        try:
+            conn = self.__connection.connection()
+            cursor = conn.cursor()
+            row_counts = list()
+            for sql in sql_list:
+                cursor.execute(sql["sql"], sql["params"])
+                row_counts.append(cursor.rowcount)
+
+            conn.commit()
+            return row_counts
+        except Exception as e:
+            if conn:
+                self.rollback(conn)
+            if self.log:
+                self.log.error("{}, errmsg={}".format(sql_list, traceback.format_exc()))
+            return False
+
     def rollback(self, conn):
-        conn.rollback()
+        try:
+            conn.rollback()
+        except:
+            pass
 
 
 class RedisCluster(object):
