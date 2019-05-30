@@ -46,6 +46,10 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
         # https请求最多重试3次
         request.mount('https://', HTTPAdapter(max_retries=3))
         response = request.get(url=url, params=params, headers=headers, timeout=timeout)
+    except requests.exceptions.ConnectTimeout:
+        code, response = -1, "调用第三方接口请求超时"
+    except requests.exceptions.ReadTimeout:
+        code, response = -1, "调用第三方接口响应超时"
     except Exception as e:
         code, response = 1, "接口调用异常url={}, params={}, 异常信息={}".format(url, params, traceback.format_exc())
     else:
@@ -120,6 +124,10 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
         # https请求最多重试3次
         request.mount('https://', HTTPAdapter(max_retries=3))
         response = request.post(url=url, data=data, params=params, headers=headers, timeout=timeout)
+    except requests.exceptions.ConnectTimeout:
+        code, response = -1, "调用第三方接口请求超时"
+    except requests.exceptions.ReadTimeout:
+        code, response = -1, "调用第三方接口响应超时"
     except Exception as e:
         code, response = 1, "接口调用异常url={}, data={}, params={}, 异常信息={}".format(url, data,
                                                                                params, traceback.format_exc())
