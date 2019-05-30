@@ -124,9 +124,11 @@ class Publish:
                               password=self.params["password"], user=self.params["user"], vhost=self.params["vhost"])
                 self.send(data, exchange, routing_key)
                 return e
+            return True
         else:
             if self.log:
                 self.log.error("发送exchange={}, routing_key={}失败,数据：{}".format(exchange, routing_key, data))
+            return False
 
     def __del__(self):
         self.stop()
