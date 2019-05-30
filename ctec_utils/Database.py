@@ -242,7 +242,7 @@ class MongodbCluster(object):
 
 class MysqlPool(object):
     """
-    mysql连接池
+    未测试mysql连接池
 
     示例：
 

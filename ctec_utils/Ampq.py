@@ -46,7 +46,7 @@ class AsyncPublish:
         except Exception as e:
             return e
 
-    def send(self, data, exchange, routing_key="", flag=3):
+    def send(self, data, exchange: str, routing_key="", flag=3) -> bool:
         if flag > 0:
             try:
                 self.data = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
@@ -66,10 +66,12 @@ class AsyncPublish:
                 self.stop()
                 self.connection = self.get_connection()
                 self.send(data, exchange, routing_key)
-                return
+                return False
+            return True
         else:
             if self.log:
                 self.log.debug("发送exchange={}, routing_key={}失败,数据：{}".format(exchange, routing_key, data))
+            return False
 
 
 class Publish:
@@ -105,7 +107,7 @@ class Publish:
         except Exception as e:
             return e
 
-    def send(self, data, exchange, routing_key="", flag=3):
+    def send(self, data, exchange: str, routing_key="", flag=3) -> bool:
         data = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
         if flag > 0:
             try:
@@ -123,7 +125,7 @@ class Publish:
                 self.__init__(host=self.params["host"], port=self.params["port"], log=self.log,
                               password=self.params["password"], user=self.params["user"], vhost=self.params["vhost"])
                 self.send(data, exchange, routing_key)
-                return e
+                return False
             return True
         else:
             if self.log:
