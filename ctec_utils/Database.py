@@ -18,13 +18,14 @@ class OraclePool(object):
         oracle = OraclePool(用户名, 密码, 'ip/库' 或 dsn, 最小连接数, 最大连接数)
     """
 
-    def __init__(self, user: str, password: str, dsn: str, mincached: int, maxcached: int, threaded: bool = False,
-                 log=None):
+    def __init__(self, user: str, password: str, dsn: str, mincached: int, maxcached: int,
+                 maxconnections=10, threaded: bool = False, log=None):
         self.user = user
         self.password = password
         self.dsn = dsn
         self.min_cached = mincached
         self.max_cached = maxcached
+        self.maxconnections = maxconnections
         self.threaded = threaded
         self.log = log
         self.__connection = self.__get_connect()
@@ -37,6 +38,7 @@ class OraclePool(object):
                         dsn=self.dsn,
                         mincached=self.min_cached,
                         maxcached=self.max_cached,
+                        maxconnections=self.maxconnections,
                         threaded=self.threaded)
 
     def procedure_cursor(self, procedure_name: str, *args, commit: bool = False):
