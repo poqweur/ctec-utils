@@ -93,6 +93,9 @@ class Publish:
                     self.log.error("创建队列对象失败-->%s" % e.args)
                 flag -= 1
                 self.__init__(host=host, port=port, user=user, password=password, vhost=vhost, log=log, flag=flag)
+        else:
+            if self.log:
+                self.log.debug("创建对象失败3次")
 
     def get_connection(self):
         credentials = pika.PlainCredentials(self.params["user"], self.params["password"])

@@ -8,7 +8,7 @@ import uuid
 
 import requests
 from requests.adapters import HTTPAdapter
-from Models import InsideOutside
+from .Models import InsideOutside
 
 
 def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5, transaction_id: str="",
