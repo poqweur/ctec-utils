@@ -19,7 +19,7 @@ class OraclePool(object):
     """
 
     def __init__(self, user: str, password: str, dsn: str, mincached: int, maxcached: int,
-                 maxconnections=10, threaded: bool = False, log=None):
+                 maxconnections=10, threaded: bool = False):
         self.user = user
         self.password = password
         self.dsn = dsn
@@ -27,7 +27,6 @@ class OraclePool(object):
         self.max_cached = maxcached
         self.maxconnections = maxconnections
         self.threaded = threaded
-        self.log = log
         self.__connection = self.__get_connect()
 
     def __get_connect(self):
@@ -64,14 +63,10 @@ class OraclePool(object):
         except Exception as e:
             if conn:
                 self.rollback(conn)
-            if self.log:
-                self.log.error("{}, params={}, errmsg={}".format(procedure_name, args, traceback.format_exc()))
             return None
         else:
             for res in list(result.getvalue()):
                 return_list.append(dict(zip([resp[0] for resp in resp_result.description], res)))
-            if self.log:
-                self.log.debug("{}, params={}, result={}".format(procedure_name, args, return_list))
             return return_list
 
     def procedure_string(self, procedure_name: str, *args, commit: bool = False):
@@ -96,12 +91,8 @@ class OraclePool(object):
         except Exception as e:
             if conn:
                 self.rollback(conn)
-            if self.log:
-                self.log.error("{}, params={}, errmsg={}".format(procedure_name, args, traceback.format_exc()))
             return None
         else:
-            if self.log:
-                self.log.debug("{}, params={}, result={}".format(procedure_name, args, result))
             return result.getvalue()
 
     def row_sql(self, sql: str, param: dict, commit: bool = False):
@@ -128,15 +119,10 @@ class OraclePool(object):
             else:
                 result = result_db.fetchall()
         except Exception as e:
-            if conn:
+            if conn and commit:
                 self.rollback(conn)
-            if self.log:
-                self.log.error("{}, params={}, errmsg={}".format(sql, param, traceback.format_exc()))
-            return None
+            raise e
         else:
-            if self.log:
-                self.log.debug("{}, params={}, result={}".format(sql, param, result))
-
             if isinstance(result, list) and len(result) > 0:
                 key_list = [key[0] for key in result_db.description]
                 for value in result:
@@ -172,9 +158,7 @@ class OraclePool(object):
         except Exception as e:
             if conn:
                 self.rollback(conn)
-            if self.log:
-                self.log.error("{}, errmsg={}".format(sql_list, traceback.format_exc()))
-            return False
+            raise e
 
     def rollback(self, conn):
         try:
