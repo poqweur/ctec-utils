@@ -236,7 +236,7 @@ class MysqlPool(object):
         print(mysql.row_sql("show databases;"))
     """
     def __init__(self, user: str, password: str, host: str, port: int, mincached: int, maxcached: int,
-                 db: str, log=None):
+                 db: str):
         self.user = user
         self.password = password
         self.host = host
@@ -244,7 +244,6 @@ class MysqlPool(object):
         self.db = db
         self.min_cached = mincached
         self.max_cached = maxcached
-        self.log = log
         self.__connection = self.__get_connect()
 
     def __get_connect(self):
@@ -280,12 +279,8 @@ class MysqlPool(object):
         except Exception as e:
             if conn:
                 self.rollback(conn)
-            if self.log:
-                self.log.error("{}, param={}, errmsg={}".format(sql, param, traceback.format_exc()))
-            return None
+            raise e
         else:
-            if self.log:
-                self.log.debug("{}, param={}, success={}".format(sql, param, results))
             return results
 
     def row_sql_list(self, sql_list: list):
@@ -316,9 +311,7 @@ class MysqlPool(object):
         except Exception as e:
             if conn:
                 self.rollback(conn)
-            if self.log:
-                self.log.error("{}, errmsg={}".format(sql_list, traceback.format_exc()))
-            return False
+            raise e
 
     def rollback(self, conn):
         """
