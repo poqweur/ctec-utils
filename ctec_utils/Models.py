@@ -25,7 +25,16 @@ class InsideOutside:
                  response_payload: str = "",
                  request_headers: dict = "",
                  response_headers: dict = "",
-                 response_code: int = ""):
+                 response_code: int = "",
+                 total_time: float = 0.0,
+                 order_id: str = "",
+                 account_num: str = "",
+                 account_type: str = "",
+                 province_code: str = "",
+                 city_code: str = "",
+                 fcode: str = "",
+                 tcode: str = "",
+                 method_code: str = ""):
         """
         :param transaction_id: 流水id
         :param dialog_type: in / out 内部流水日志 / 外部流水日志
@@ -40,6 +49,15 @@ class InsideOutside:
         :param request_headers: 头部信息
         :param response_headers: 头部信息
         :param response_code: 响应码
+        :param total_time: 接口处理总耗时
+        :param order_id: 订单编号（根据预装、返档、不同接口调用使用的主，子订单来填写） , 参考：新架构平台编码规范
+        :param account_num: 办理账号，可为手机号码、固话号码、宽带号码等，根据“账号类型”确定
+        :param account_type: 账号类型（11手机号码，12固话号码，13宽带帐号），对应“办理账号”。
+        :param province_code: 归属省（来自办理号码的归属地）
+        :param city_code: 归属市（来自办理号码的归属地）
+        :param fcode: 调用方编码, 参考：新架构平台编码规范f_code
+        :param tcode: 被调用方编码, 参考：新架构平台编码规范t_code
+        :param method_code: 接口方法编码, 参考：新架构平台编码规范method
         """
         self.transaction_id: str = transaction_id
         self.dialog_type: str = dialog_type
@@ -54,6 +72,15 @@ class InsideOutside:
         self.request_headers: dict = request_headers
         self.response_headers: dict = response_headers
         self.response_code: int = response_code
+        self.total_time: float = total_time
+        self.order_id: str = order_id
+        self.account_num: str = account_num
+        self.account_type: str = account_type
+        self.province_code: str = province_code
+        self.city_code: str = city_code
+        self.fcode: str = fcode
+        self.tcode: str = tcode
+        self.method_code: str = method_code
 
     def json(self):
         return json.dumps(self.__dict__, ensure_ascii=False)
