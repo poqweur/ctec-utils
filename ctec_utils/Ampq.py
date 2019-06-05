@@ -127,8 +127,7 @@ class Publish:
                 flag -= 1
                 self.__init__(host=self.params["host"], port=self.params["port"], log=self.log,
                               password=self.params["password"], user=self.params["user"], vhost=self.params["vhost"])
-                self.send(data, exchange, routing_key)
-                return False
+                return self.send(data, exchange, routing_key)
             return True
         else:
             if self.log:
