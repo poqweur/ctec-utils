@@ -25,7 +25,9 @@ class InsideOutside:
                  response_payload: str = "",
                  request_headers: dict = "",
                  response_headers: dict = "",
-                 response_code: int = "",
+                 response_code: int = 0,
+                 response_remark: str = "",
+                 http_status_code: int = 200,
                  total_time: float = 0.0,
                  order_id: str = "",
                  account_num: str = "",
@@ -48,7 +50,9 @@ class InsideOutside:
         :param response_payload: 响应参数
         :param request_headers: 头部信息
         :param response_headers: 头部信息
-        :param response_code: 响应码
+        :param response_code: 业务级响应码（错误码）。
+        :param response_remark: 业务级响应描述文字。
+        :param http_status_code: 状态码（常见的状态码：200-服务器成功返回网页，404–请求的网页不存在，503–服务不可用等）
         :param total_time: 接口处理总耗时
         :param order_id: 订单编号（根据预装、返档、不同接口调用使用的主，子订单来填写） , 参考：新架构平台编码规范
         :param account_num: 办理账号，可为手机号码、固话号码、宽带号码等，根据“账号类型”确定
@@ -72,6 +76,8 @@ class InsideOutside:
         self.request_headers: dict = request_headers
         self.response_headers: dict = response_headers
         self.response_code: int = response_code
+        self.response_remark: str = response_remark
+        self.http_status_code: int = http_status_code
         self.total_time: float = total_time
         self.order_id: str = order_id
         self.account_num: str = account_num
