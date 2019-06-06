@@ -31,7 +31,8 @@ def get(url, params: dict = None, header: dict = None, log=None, timeout: int =5
         transaction_id = str(uuid.uuid4()).replace("-", "")
 
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/"
-                             "537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"}
+                             "537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36",
+               "Content-type": "application/json"}
     if header:
         headers.update(header)
     # 创建外部流水日志对西昂
@@ -109,7 +110,9 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
         transaction_id = str(uuid.uuid4()).replace("-", "")
 
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/"
-                             "537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"}
+                             "537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36",
+               "Content-type": "application/json",
+               "Content-Length": len(data)}
     if header:
         headers.update(header)
     # 创建外部流水对象
