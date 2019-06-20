@@ -49,7 +49,7 @@ class AsyncPublish:
     def send(self, data, exchange: str, routing_key="", flag=3) -> bool:
         if flag > 0:
             try:
-                self.data = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
+                self.data = data if isinstance(data, str) else json.dumps(data)
                 self.exchange = exchange
                 self.routing_key = routing_key
                 self.connection = self.get_connection()
@@ -111,7 +111,7 @@ class Publish:
             return e
 
     def send(self, data, exchange: str, routing_key="", flag=3) -> bool:
-        data = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
+        data = data if isinstance(data, str) else json.dumps(data)
         if flag > 0:
             try:
                 self.channel.basic_publish(exchange=exchange,

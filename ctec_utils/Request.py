@@ -102,7 +102,7 @@ def post(url, data=None, params: dict = None, header: dict = None, log=None, tim
     :param is_external: 是否记录外部流水
     :return: 返回元组，0是请求成功 响应体，1是请求异常 异常描述
     """
-    data = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
+    data = data if isinstance(data, str) else json.dumps(data)
     code, response = 0, ""
     if log:
         log.debug("start url={}, data={}, params={}".format(url, data, params))

@@ -89,7 +89,7 @@ class InsideOutside:
         self.method_code: str = method_code
 
     def json(self):
-        return json.dumps(self.__dict__, ensure_ascii=False)
+        return json.dumps(self.__dict__)
 
 
 class JournalLog:
@@ -125,7 +125,7 @@ class JournalLog:
         self.request_id: str = request_id
 
     def json(self):
-        return json.dumps(self.__dict__, ensure_ascii=False)
+        return json.dumps(self.__dict__)
 
 
 class InternalLog:
@@ -195,7 +195,7 @@ class InternalLog:
         self.feedback_content: str = feedback_content
 
     def json(self):
-        return json.dumps(self.__dict__, ensure_ascii=False)
+        return json.dumps(self.__dict__)
 
 
 class ExternalInterfaceLoggingEvent:
@@ -265,7 +265,7 @@ class ExternalInterfaceLoggingEvent:
         self.feedback_content: str = feedback_content
 
     def json(self):
-        return json.dumps(self.__dict__, ensure_ascii=False)
+        return json.dumps(self.__dict__)
 
 
 class OrderJournalEvent:
@@ -303,7 +303,7 @@ class OrderJournalEvent:
         self.city_name: str = city_name
 
     def json(self):
-        return json.dumps(self.__dict__, ensure_ascii=False)
+        return json.dumps(self.__dict__)
 
 
 class IssueJobJournal(object):
