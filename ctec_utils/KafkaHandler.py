@@ -92,28 +92,28 @@ class KafkaLoggingHandler(logging.Handler):
         self.producer = KafkaProducer(bootstrap_servers=hosts_list, reconnect_backoff_ms=timeout_secs, retries=1)
 
     def emit(self, record, flag=3):
-        if flag > 0:
+        # if flag > 0:
             # drop kafka logging to avoid infinite recursion
-            if record.name == 'kafka':
-                return
-            try:
-                # use default formatting
-                msg = self.format(record)
-                if isinstance(msg, str):
-                    msg = msg.encode("utf-8")
+        if record.name == 'kafka':
+            return
+        try:
+            # use default formatting
+            msg = self.format(record)
+            if isinstance(msg, str):
+                msg = msg.encode("utf-8")
 
-                # produce message
-                self.producer.send(topic=self.kafka_topic_name, value=msg)
-                self.producer.flush()
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                self.__init__(self.hosts_list, self.topic, self.timeout_secs, self.model, **self.kwargs)
-                flag -= 1
-                self.emit(record, flag)
-                # self.handleError(record)
-        else:
+            # produce message
+            self.producer.send(topic=self.kafka_topic_name, value=msg)
+            self.producer.flush()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            # self.__init__(self.hosts_list, self.topic, self.timeout_secs, self.model, **self.kwargs)
+            # flag -= 1
+            # self.emit(record, flag)
             self.handleError(record)
+        # else:
+        #     self.handleError(record)
 
     def close(self):
         if self.producer is not None:
@@ -291,3 +291,11 @@ class ThirdLog(logging.Logger):
             extra.update(ex)
             del kwargs["extra"]
         self._log(logging.INFO, msg, args, extra=extra, **kwargs)
+
+
+if __name__ == '__main__':
+    logger = ThirdLog("ctec-utils", "s", "b")
+    logger.addHandler(KafkaLoggingHandler("172.16.50.35:9092,172.16.50.36:9092", "super_topic_test", ))
+    import time
+    time.sleep(10)
+    logger.debug("测试1")
