@@ -19,7 +19,7 @@ class OraclePool(object):
     """
 
     def __init__(self, user: str, password: str, dsn: str, mincached: int, maxcached: int,
-                 maxconnections=10, threaded: bool = False):
+                 maxconnections=10, threaded: bool = False, **kwargs):
         self.user = user
         self.password = password
         self.dsn = dsn
@@ -27,6 +27,7 @@ class OraclePool(object):
         self.max_cached = maxcached
         self.maxconnections = maxconnections
         self.threaded = threaded
+        self.kwargs = kwargs
         self.__connection = self.__get_connect()
 
     def __get_connect(self):
@@ -167,6 +168,100 @@ class OraclePool(object):
             pass
 
 
+class RowOraclePool(object):
+
+    def __init__(self, user: str, password: str, dsn: str, mincached: int, maxcached: int, threaded: bool = False, **kwargs):
+        self.user = user
+        self.password = password
+        self.dsn = dsn
+        self.min_cached = mincached
+        self.max_cached = maxcached
+        self.threaded = threaded
+        self.kwargs = kwargs
+        self.__connection = self.__get_connect()
+
+    def __get_connect(self):
+        # 创建连接对象
+        return cx_Oracle.SessionPool(
+                        user=self.user,
+                        password=self.password,
+                        dsn=self.dsn,
+                        min=self.min_cached,
+                        max=self.max_cached, **self.kwargs)
+
+    def row_sql(self, sql: str, param: dict, commit: bool = False):
+        """
+        原生sql
+
+        例如：
+            o = OraclePool("user", "password", 'dsn', 0, 1)
+            print(o.row_sql("select * from 表 where ROWNUM < :num", {"num": 10}))
+        :param sql: sql语句
+        :param param: 入参
+        :param commit: 是否commit
+        :return:
+        """
+        conn = None
+        try:
+            conn = self.__connection.acquire()
+            cursor = conn.cursor()
+            return_result = list()
+            result_db = cursor.execute(sql, param)
+            if commit:
+                conn.commit()
+                result = cursor.rowcount
+            else:
+                result = result_db.fetchall()
+        except Exception as e:
+            if conn and commit:
+                self.rollback(conn)
+            raise e
+        else:
+            # self.__connection.release()
+            if isinstance(result, list) and len(result) > 0:
+                key_list = [key[0] for key in result_db.description]
+                for value in result:
+                    return_result.append(dict(zip(key_list, value)))
+                return return_result
+            return result
+
+    def row_sql_list(self, sql_list: list):
+        """
+        多sql提交
+        :param sql_list: {"sql": "UPDATE 表 SET ORDER_STATUS = :order_status WHERE ORDER_ID = :order_id",
+             "params": {"order_id": "1234567", "order_status": "Z0101"}},
+            {
+                "sql": "insert into 表1(ID, BUSINESS_ID, ORDER_ID) values(:id, :business_id, :order_id)",
+                "params": {"id": "555555", "business_id": "6666666", "order_id": "7777777"}
+            }
+        :return:
+        """
+        conn = None
+        try:
+            conn = self.__connection.acquire()
+            cursor = conn.cursor()
+            row_counts = list()
+            for sql in sql_list:
+                cursor.execute(sql["sql"], sql["params"])
+                count = cursor.rowcount
+                if count is 0:
+                    self.rollback(conn)
+                    return None
+                row_counts.append(count)
+            conn.commit()
+            return row_counts
+        except Exception as e:
+            if conn:
+                self.rollback(conn)
+            raise e
+
+    def rollback(self, conn):
+        try:
+            conn.rollback()
+        except:
+            pass
+
+
 class RedisCluster(object):
     """
     连接redis集群
@@ -182,12 +277,13 @@ class RedisCluster(object):
         conn.get("键")
     """
 
-    def __init__(self, redis_nodes: list):
+    def __init__(self, redis_nodes: list, **kwargs):
         self.redis_nodes = redis_nodes
+        self.kwargs = kwargs
         self.conn = self.get_conn()
 
     def get_conn(self):
-        return StrictRedisCluster(startup_nodes=self.redis_nodes)
+        return StrictRedisCluster(startup_nodes=self.redis_nodes, **self.kwargs)
 
 
 class MongodbCluster(object):
@@ -211,7 +307,7 @@ class MongodbCluster(object):
         self.conn = self.get_connect(hosts)
 
     def get_connect(self, hosts):
-        db = self.kwargs.get("db")
+        db = self.kwargs.pop("db")
         if self.user:
             hosts_list = ",".join(["{}:{}".format(host["host"], host["port"]) for host in hosts])
             url = "mongodb://{user}:{password}@{list}/".format(user=self.user, password=self.password, list=hosts_list)
@@ -223,7 +319,7 @@ class MongodbCluster(object):
             url = "mongodb://{list}/".format(list=hosts_list)
             if db:
                 url += db
-            return MongoClient(url)
+            return MongoClient(url, **self.kwargs)
 
 
 class MysqlPool(object):
@@ -236,7 +332,7 @@ class MysqlPool(object):
         print(mysql.row_sql("show databases;"))
     """
     def __init__(self, user: str, password: str, host: str, port: int, mincached: int, maxcached: int,
-                 db: str):
+                 db: str, **kwargs):
         self.user = user
         self.password = password
         self.host = host
@@ -244,6 +340,7 @@ class MysqlPool(object):
         self.db = db
         self.min_cached = mincached
         self.max_cached = maxcached
+        self.kwargs = kwargs
         self.__connection = self.__get_connect()
 
     def __get_connect(self):
@@ -255,7 +352,7 @@ class MysqlPool(object):
                         db=self.db,
                         port=self.port,
                         mincached=self.min_cached,
-                        maxcached=self.max_cached)
+                        maxcached=self.max_cached, **self.kwargs)
 
     def row_sql(self, sql, param=None, commit=False):
         """

@@ -292,10 +292,3 @@ class ThirdLog(logging.Logger):
             del kwargs["extra"]
         self._log(logging.INFO, msg, args, extra=extra, **kwargs)
 
-
-if __name__ == '__main__':
-    logger = ThirdLog("ctec-utils", "s", "b")
-    logger.addHandler(KafkaLoggingHandler("172.16.50.35:9092,172.16.50.36:9092", "super_topic_test", ))
-    import time
-    time.sleep(10)
-    logger.debug("测试1")
