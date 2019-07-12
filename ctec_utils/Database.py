@@ -255,6 +255,14 @@ class RowOraclePool(object):
                 self.rollback(conn)
             raise e
 
+    def reload(self):
+        try:
+            # 释放池
+            self.__connection.release()
+        except:
+            pass
+        self.__connection = self.__get_connect()
+
     def rollback(self, conn):
         try:
             conn.rollback()
