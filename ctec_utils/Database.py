@@ -215,14 +215,16 @@ class RowOraclePool(object):
         except Exception as e:
             if conn and commit:
                 self.rollback(conn)
+                self.__connection.release(conn)
             raise e
         else:
-            # self.__connection.release()
             if isinstance(result, list) and len(result) > 0:
                 key_list = [key[0] for key in result_db.description]
+                self.__connection.release(conn)
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
                 return return_result
+            self.__connection.release(conn)
             return result
 
     def row_sql_list(self, sql_list: list):
@@ -249,10 +251,12 @@ class RowOraclePool(object):
                     return None
                 row_counts.append(count)
             conn.commit()
+            self.__connection.release(conn)
             return row_counts
         except Exception as e:
             if conn:
                 self.rollback(conn)
+                self.__connection.release(conn)
             raise e
 
     def reload(self):
