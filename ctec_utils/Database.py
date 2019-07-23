@@ -115,8 +115,11 @@ class OraclePool(object):
             return_result = list()
             result_db = cursor.execute(sql, param)
             if commit:
-                conn.commit()
                 result = cursor.rowcount
+                if result is 0:
+                    self.rollback(conn)
+                else:
+                    conn.commit()
             else:
                 result = result_db.fetchall()
         except Exception as e:
@@ -208,8 +211,11 @@ class RowOraclePool(object):
             return_result = list()
             result_db = cursor.execute(sql, param)
             if commit:
-                conn.commit()
                 result = cursor.rowcount
+                if result is 0:
+                    self.rollback(conn)
+                else:
+                    conn.commit()
             else:
                 result = result_db.fetchall()
         except Exception as e:
@@ -380,8 +386,11 @@ class MysqlPool(object):
             cur = conn.cursor(pymysql.cursors.DictCursor)
             result = cur.execute(sql, param)
             if commit:
-                conn.commit()
                 results = result.rowcount
+                if result is 0:
+                    self.rollback(conn)
+                else:
+                    conn.commit()
             else:
                 results = cur.fetchall()
             conn.close()
