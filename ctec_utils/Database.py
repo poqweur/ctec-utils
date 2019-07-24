@@ -28,7 +28,7 @@ class OraclePool(object):
         self.maxconnections = maxconnections
         self.threaded = threaded
         self.kwargs = kwargs
-        self.__connection = self.__get_connect()
+        self._connection = self.__get_connect()
 
     def __get_connect(self):
         # 创建连接对象
@@ -52,7 +52,7 @@ class OraclePool(object):
         conn = None
         return_list = []
         try:
-            conn = self.__connection.connection()
+            conn = self._connection.connection()
             cursor = conn.cursor()
             result = cursor.var(cx_Oracle.CURSOR)
             params = list(args)
@@ -80,7 +80,7 @@ class OraclePool(object):
         """
         conn = None
         try:
-            conn = self.__connection.connection()
+            conn = self._connection.connection()
             cursor = conn.cursor()
             result = cursor.var(cx_Oracle.STRING)
             params = list(args)
@@ -110,7 +110,7 @@ class OraclePool(object):
         """
         conn = None
         try:
-            conn = self.__connection.connection()
+            conn = self._connection.connection()
             cursor = conn.cursor()
             return_result = list()
             result_db = cursor.execute(sql, param)
@@ -147,7 +147,7 @@ class OraclePool(object):
         """
         conn = None
         try:
-            conn = self.__connection.connection()
+            conn = self._connection.connection()
             cursor = conn.cursor()
             row_counts = list()
             for sql in sql_list:
@@ -181,7 +181,7 @@ class RowOraclePool(object):
         self.max_cached = maxcached
         self.threaded = threaded
         self.kwargs = kwargs
-        self.__connection = self.__get_connect()
+        self._connection = self.__get_connect()
 
     def __get_connect(self):
         # 创建连接对象
@@ -206,7 +206,7 @@ class RowOraclePool(object):
         """
         conn = None
         try:
-            conn = self.__connection.acquire()
+            conn = self._connection.acquire()
             cursor = conn.cursor()
             return_result = list()
             result_db = cursor.execute(sql, param)
@@ -221,16 +221,16 @@ class RowOraclePool(object):
         except Exception as e:
             if conn and commit:
                 self.rollback(conn)
-                self.__connection.release(conn)
+                self._connection.release(conn)
             raise e
         else:
             if isinstance(result, list) and len(result) > 0:
                 key_list = [key[0] for key in result_db.description]
-                self.__connection.release(conn)
+                self._connection.release(conn)
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
                 return return_result
-            self.__connection.release(conn)
+            self._connection.release(conn)
             return result
 
     def row_sql_list(self, sql_list: list):
@@ -246,7 +246,7 @@ class RowOraclePool(object):
         """
         conn = None
         try:
-            conn = self.__connection.acquire()
+            conn = self._connection.acquire()
             cursor = conn.cursor()
             row_counts = list()
             for sql in sql_list:
@@ -257,21 +257,21 @@ class RowOraclePool(object):
                     return None
                 row_counts.append(count)
             conn.commit()
-            self.__connection.release(conn)
+            self._connection.release(conn)
             return row_counts
         except Exception as e:
             if conn:
                 self.rollback(conn)
-                self.__connection.release(conn)
+                self._connection.release(conn)
             raise e
 
     def reload(self):
         try:
             # 释放池
-            self.__connection.release()
+            self._connection.release()
         except:
             pass
-        self.__connection = self.__get_connect()
+        self._connection = self.__get_connect()
 
     def rollback(self, conn):
         try:
@@ -359,7 +359,7 @@ class MysqlPool(object):
         self.min_cached = mincached
         self.max_cached = maxcached
         self.kwargs = kwargs
-        self.__connection = self.__get_connect()
+        self._connection = self.__get_connect()
 
     def __get_connect(self):
         # setsession=['SET AUTOCOMMIT = 1']是用来设置线程池是否打开自动更新的配置，0为False，1为True
@@ -382,7 +382,7 @@ class MysqlPool(object):
         """
         conn = None
         try:
-            conn = self.__connection.connection()  # 以后每次需要数据库连接就是用connection（）函数获取连接就好了
+            conn = self._connection.connection()  # 以后每次需要数据库连接就是用connection（）函数获取连接就好了
             cur = conn.cursor(pymysql.cursors.DictCursor)
             result = cur.execute(sql, param)
             if commit:
@@ -414,7 +414,7 @@ class MysqlPool(object):
         """
         conn = None
         try:
-            conn = self.__connection.connection()
+            conn = self._connection.connection()
             cursor = conn.cursor()
             row_counts = list()
             for sql in sql_list:
