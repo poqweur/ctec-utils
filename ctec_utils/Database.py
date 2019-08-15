@@ -191,7 +191,8 @@ class RowOraclePool(object):
                         password=self.password,
                         dsn=self.dsn,
                         min=self.min_cached,
-                        max=self.max_cached, **self.kwargs)
+                        max=self.max_cached,
+                        threaded=self.threaded, **self.kwargs)
 
     def row_sql(self, sql: str, param: dict, commit: bool = False):
         """
