@@ -39,7 +39,7 @@ class OraclePool(object):
                         mincached=self.min_cached,
                         maxcached=self.max_cached,
                         maxconnections=self.maxconnections,
-                        threaded=self.threaded)
+                        threaded=self.threaded, **self.kwargs)
 
     def procedure_cursor(self, procedure_name: str, *args, commit: bool = False):
         """
