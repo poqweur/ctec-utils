@@ -182,7 +182,6 @@ class RowOraclePool(object):
         self.threaded = threaded
         self.kwargs = kwargs
         self._connection = self.__get_connect()
-        self._connection.stmtcachesize = kwargs.get("stmtcachesize", 1024)
 
     def __get_connect(self):
         # 创建连接对象
