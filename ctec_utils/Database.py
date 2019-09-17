@@ -1,8 +1,6 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Author: Wjy
-import traceback
-
 import cx_Oracle
 import pymysql
 from DBUtils.PooledDB import PooledDB
@@ -41,6 +39,14 @@ class OraclePool(object):
                         maxconnections=self.maxconnections,
                         threaded=self.threaded, **self.kwargs)
 
+    @staticmethod
+    def give_back(conn, cursor):
+        try:
+            cursor.close()
+            conn.close()
+        except Exception as e:
+            pass
+
     def procedure_cursor(self, procedure_name: str, *args, commit: bool = False):
         """
         存储过程返回游标对象
@@ -49,7 +55,7 @@ class OraclePool(object):
         :param commit: 是否commit
         :return:
         """
-        conn = None
+        conn, cursor = None, None
         return_list = []
         try:
             conn = self._connection.connection()
@@ -60,14 +66,15 @@ class OraclePool(object):
             _, resp_result = cursor.callproc(procedure_name, params)
             if commit:
                 conn.commit()
-            conn.close()
         except Exception as e:
             if conn:
                 self.rollback(conn)
+                self.give_back(conn, cursor)
             return None
         else:
             for res in list(result.getvalue()):
                 return_list.append(dict(zip([resp[0] for resp in resp_result.description], res)))
+            self.give_back(conn, cursor)
             return return_list
 
     def procedure_string(self, procedure_name: str, *args, commit: bool = False):
@@ -78,7 +85,7 @@ class OraclePool(object):
         :param commit: 是否commit
         :return:
         """
-        conn = None
+        conn, cursor = None, None
         try:
             conn = self._connection.connection()
             cursor = conn.cursor()
@@ -88,15 +95,16 @@ class OraclePool(object):
             cursor.callproc(procedure_name, params)
             if commit:
                 conn.commit()
-            conn.close()
         except Exception as e:
             if conn:
                 self.rollback(conn)
+                self.give_back(conn, cursor)
             return None
         else:
+            self.give_back(conn, cursor)
             return result.getvalue()
 
-    def row_sql(self, sql: str, param: dict, commit: bool = False):
+    def row_sql(self, sql: str, param: dict):
         """
         原生sql
 
@@ -105,33 +113,54 @@ class OraclePool(object):
             print(o.row_sql("select * from 表 where ROWNUM < :num", {"num": 10}))
         :param sql: sql语句
         :param param: 入参
-        :param commit: 是否commit
         :return:
         """
-        conn = None
+        conn, cursor = None, None
         try:
             conn = self._connection.connection()
             cursor = conn.cursor()
-            return_result = list()
             result_db = cursor.execute(sql, param)
-            if commit:
-                result = cursor.rowcount
-                if result is 0:
-                    self.rollback(conn)
-                else:
-                    conn.commit()
-            else:
-                result = result_db.fetchall()
+            result = result_db.fetchall()
         except Exception as e:
-            if conn and commit:
-                self.rollback(conn)
+            self.give_back(conn, cursor)
             raise e
         else:
+            self.give_back(conn, cursor)
             if isinstance(result, list) and len(result) > 0:
+                return_result = list()
                 key_list = [key[0] for key in result_db.description]
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
                 return return_result
+            return result
+
+    def row_sql_commit(self, sql: str, param: dict):
+        """
+        原生sql
+
+        例如：
+            o = OraclePool("user", "password", 'dsn', 0, 1)
+            print(o.row_sql("select * from 表 where ROWNUM < :num", {"num": 10}))
+        :param sql: sql语句
+        :param param: 入参
+        :return:
+        """
+        conn, cursor = None, None
+        try:
+            conn = self._connection.connection()
+            cursor = conn.cursor()
+            cursor.execute(sql, param)
+            result = cursor.rowcount
+            if result is 0:
+                self.rollback(conn)
+            else:
+                conn.commit()
+        except Exception as e:
+            self.rollback(conn)
+            self.give_back(conn, cursor)
+            raise e
+        else:
+            self.give_back(conn, cursor)
             return result
 
     def row_sql_list(self, sql_list: list):
@@ -145,7 +174,7 @@ class OraclePool(object):
             }
         :return:
         """
-        conn = None
+        conn, cursor = None, None
         try:
             conn = self._connection.connection()
             cursor = conn.cursor()
@@ -158,10 +187,12 @@ class OraclePool(object):
                     return None
                 row_counts.append(count)
             conn.commit()
+            self.give_back(conn, cursor)
             return row_counts
         except Exception as e:
             if conn:
                 self.rollback(conn)
+                self.give_back(conn, cursor)
             raise e
 
     def rollback(self, conn):
@@ -193,7 +224,7 @@ class RowOraclePool(object):
                         max=self.max_cached,
                         threaded=self.threaded, **self.kwargs)
 
-    def row_sql(self, sql: str, param: dict, commit: bool = False):
+    def row_sql(self, sql: str, param: dict):
         """
         原生sql
 
@@ -211,26 +242,48 @@ class RowOraclePool(object):
             cursor = conn.cursor()
             return_result = list()
             result_db = cursor.execute(sql, param)
-            if commit:
-                result = cursor.rowcount
-                if result is 0:
-                    self.rollback(conn)
-                else:
-                    conn.commit()
-            else:
-                result = result_db.fetchall()
+            result = result_db.fetchall()
         except Exception as e:
-            if conn and commit:
-                self.rollback(conn)
-                self._connection.release(conn)
+            self.rollback(conn)
+            self._connection.release(conn)
             raise e
         else:
+            self._connection.release(conn)
             if isinstance(result, list) and len(result) > 0:
                 key_list = [key[0] for key in result_db.description]
-                self._connection.release(conn)
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
                 return return_result
+            return result
+
+    def row_sql_commit(self, sql: str, param: dict):
+        """
+        原生sql
+
+        例如：
+            o = OraclePool("user", "password", 'dsn', 0, 1)
+            print(o.row_sql("select * from 表 where ROWNUM < :num", {"num": 10}))
+        :param sql: sql语句
+        :param param: 入参
+        :param commit: 是否commit
+        :return:
+        """
+        conn = None
+        try:
+            conn = self._connection.acquire()
+            cursor = conn.cursor()
+            cursor.execute(sql, param)
+
+            result = cursor.rowcount
+            if result is 0:
+                self.rollback(conn)
+            else:
+                conn.commit()
+        except Exception as e:
+            self.rollback(conn)
+            self._connection.release(conn)
+            raise e
+        else:
             self._connection.release(conn)
             return result
 
