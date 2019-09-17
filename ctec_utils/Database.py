@@ -125,13 +125,14 @@ class OraclePool(object):
             self.give_back(conn, cursor)
             raise e
         else:
-            self.give_back(conn, cursor)
             if isinstance(result, list) and len(result) > 0:
                 return_result = list()
                 key_list = [key[0] for key in result_db.description]
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
+                self.give_back(conn, cursor)
                 return return_result
+            self.give_back(conn, cursor)
             return result
 
     def row_sql_commit(self, sql: str, param: dict):
@@ -248,12 +249,13 @@ class RowOraclePool(object):
             self._connection.release(conn)
             raise e
         else:
-            self._connection.release(conn)
             if isinstance(result, list) and len(result) > 0:
                 key_list = [key[0] for key in result_db.description]
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
+                self._connection.release(conn)
                 return return_result
+            self._connection.release(conn)
             return result
 
     def row_sql_commit(self, sql: str, param: dict):
