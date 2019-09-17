@@ -119,5 +119,3 @@ newLog.critical('logger critical message')
     python3 setup.py sdist upload
     python3 setup.py bdist_wheel --universal
     python3 setup.py bdist_wheel upload
-
-zdd666
