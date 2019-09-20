@@ -110,10 +110,12 @@ class Publish:
         except Exception as e:
             return e
 
-    def send(self, data, exchange: str, routing_key="", flag=3) -> bool:
+    def send(self, data, exchange: str, routing_key="", flag=3, ack=False) -> bool:
         data = data if isinstance(data, str) else json.dumps(data)
         if flag > 0:
             try:
+                if ack:
+                    self.channel.confirm_delivery()
                 self.channel.basic_publish(exchange=exchange,
                                            routing_key=routing_key,
                                            body=data,
