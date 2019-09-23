@@ -116,10 +116,10 @@ class Publish:
             try:
                 if ack:
                     self.channel.confirm_delivery()
-                self.channel.basic_publish(exchange=exchange,
-                                           routing_key=routing_key,
-                                           body=data,
-                                           properties=pika.spec.BasicProperties(delivery_mode=2))
+                res = self.channel.basic_publish(exchange=exchange,
+                                                 routing_key=routing_key,
+                                                 body=data,
+                                                 properties=pika.spec.BasicProperties(delivery_mode=2))
                 if self.log:
                     self.log.debug("发送exchange={},routing_key={}成功,数据：{}".format(exchange, routing_key, data))
             except Exception as e:
@@ -130,7 +130,7 @@ class Publish:
                 self.__init__(host=self.params["host"], port=self.params["port"], log=self.log,
                               password=self.params["password"], user=self.params["user"], vhost=self.params["vhost"])
                 return self.send(data, exchange, routing_key)
-            return True
+            return res
         else:
             if self.log:
                 self.log.error("发送exchange={}, routing_key={}失败,数据：{}".format(exchange, routing_key, data))
