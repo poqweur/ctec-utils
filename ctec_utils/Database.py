@@ -42,8 +42,10 @@ class OraclePool(object):
     @staticmethod
     def give_back(conn, cursor):
         try:
-            cursor.close()
-            conn.close()
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
         except Exception as e:
             pass
 
@@ -119,15 +121,16 @@ class OraclePool(object):
         try:
             conn = self._connection.connection()
             cursor = conn.cursor()
-            result_db = cursor.execute(sql, param)
-            result = result_db.fetchall()
+            cursor.prepare(sql)
+            cursor.execute(None, param)
+            result = cursor.fetchall()
         except Exception as e:
             self.give_back(conn, cursor)
             raise e
         else:
             if isinstance(result, list) and len(result) > 0:
                 return_result = list()
-                key_list = [key[0] for key in result_db.description]
+                key_list = [key[0] for key in cursor.description]
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
                 self.give_back(conn, cursor)
@@ -150,7 +153,8 @@ class OraclePool(object):
         try:
             conn = self._connection.connection()
             cursor = conn.cursor()
-            cursor.execute(sql, param)
+            cursor.prepare(sql)
+            cursor.execute(None, param)
             result = cursor.rowcount
             if result is 0:
                 self.rollback(conn)
@@ -181,7 +185,8 @@ class OraclePool(object):
             cursor = conn.cursor()
             row_counts = list()
             for sql in sql_list:
-                cursor.execute(sql["sql"], sql["params"])
+                cursor.prepare(sql["sql"])
+                cursor.execute(None, sql["params"])
                 count = cursor.rowcount
                 if count is 0:
                     self.rollback(conn)
@@ -241,16 +246,16 @@ class RowOraclePool(object):
         try:
             conn = self._connection.acquire()
             cursor = conn.cursor()
-            return_result = list()
-            result_db = cursor.execute(sql, param)
-            result = result_db.fetchall()
+            cursor.execute(sql, param)
+            result = cursor.fetchall()
         except Exception as e:
             self.rollback(conn)
             self._connection.release(conn)
             raise e
         else:
             if isinstance(result, list) and len(result) > 0:
-                key_list = [key[0] for key in result_db.description]
+                return_result = list()
+                key_list = [key[0] for key in cursor.description]
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
                 self._connection.release(conn)
