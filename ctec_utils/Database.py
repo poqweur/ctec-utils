@@ -71,12 +71,10 @@ class OraclePool(object):
         except Exception as e:
             if conn:
                 self.rollback(conn)
-                self.give_back(conn, cursor)
             return None
         else:
             for res in list(result.getvalue()):
                 return_list.append(dict(zip([resp[0] for resp in resp_result.description], res)))
-            self.give_back(conn, cursor)
             return return_list
 
     def procedure_string(self, procedure_name: str, *args, commit: bool = False):
@@ -100,10 +98,8 @@ class OraclePool(object):
         except Exception as e:
             if conn:
                 self.rollback(conn)
-                self.give_back(conn, cursor)
             return None
         else:
-            self.give_back(conn, cursor)
             return result.getvalue()
 
     def row_sql(self, sql: str, param: dict):
@@ -117,26 +113,22 @@ class OraclePool(object):
         :param param: 入参
         :return:
         """
-        conn, cursor = None, None
         try:
             conn = self._connection.connection()
             cursor = conn.cursor()
             cursor.prepare(sql)
             cursor.execute(None, param)
             result = cursor.fetchall()
-        except Exception as e:
-            self.give_back(conn, cursor)
-            raise e
-        else:
+
             if isinstance(result, list) and len(result) > 0:
                 return_result = list()
                 key_list = [key[0] for key in cursor.description]
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
-                self.give_back(conn, cursor)
                 return return_result
-            self.give_back(conn, cursor)
             return result
+        except Exception as e:
+            raise e
 
     def row_sql_commit(self, sql: str, param: dict):
         """
@@ -160,13 +152,11 @@ class OraclePool(object):
                 self.rollback(conn)
             else:
                 conn.commit()
+            return result
         except Exception as e:
             self.rollback(conn)
-            self.give_back(conn, cursor)
+            # self.give_back(conn, cursor)
             raise e
-        else:
-            self.give_back(conn, cursor)
-            return result
 
     def row_sql_list(self, sql_list: list):
         """
@@ -193,12 +183,11 @@ class OraclePool(object):
                     return None
                 row_counts.append(count)
             conn.commit()
-            self.give_back(conn, cursor)
             return row_counts
         except Exception as e:
             if conn:
                 self.rollback(conn)
-                self.give_back(conn, cursor)
+                # self.give_back(conn, cursor)
             raise e
 
     def rollback(self, conn):
@@ -258,9 +247,9 @@ class RowOraclePool(object):
                 key_list = [key[0] for key in cursor.description]
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
-                self._connection.release(conn)
+                # self._connection.release(conn)
                 return return_result
-            self._connection.release(conn)
+            # self._connection.release(conn)
             return result
 
     def row_sql_commit(self, sql: str, param: dict):
@@ -288,10 +277,8 @@ class RowOraclePool(object):
                 conn.commit()
         except Exception as e:
             self.rollback(conn)
-            self._connection.release(conn)
             raise e
         else:
-            self._connection.release(conn)
             return result
 
     def row_sql_list(self, sql_list: list):
@@ -318,12 +305,10 @@ class RowOraclePool(object):
                     return None
                 row_counts.append(count)
             conn.commit()
-            self._connection.release(conn)
             return row_counts
         except Exception as e:
             if conn:
                 self.rollback(conn)
-                self._connection.release(conn)
             raise e
 
     def reload(self):
