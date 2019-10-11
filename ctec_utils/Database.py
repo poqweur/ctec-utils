@@ -125,7 +125,9 @@ class OraclePool(object):
                 key_list = [key[0] for key in cursor.description]
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
+                self.give_back(conn, cursor)
                 return return_result
+            self.give_back(conn, cursor)
             return result
         except Exception as e:
             raise e
@@ -148,14 +150,12 @@ class OraclePool(object):
             cursor.prepare(sql)
             cursor.execute(None, param)
             result = cursor.rowcount
-            if result is 0:
-                self.rollback(conn)
-            else:
-                conn.commit()
+            conn.commit()
+            self.give_back(conn, cursor)
             return result
         except Exception as e:
             self.rollback(conn)
-            # self.give_back(conn, cursor)
+            self.give_back(conn, cursor)
             raise e
 
     def row_sql_list(self, sql_list: list):
@@ -172,22 +172,19 @@ class OraclePool(object):
         conn, cursor = None, None
         try:
             conn = self._connection.connection()
-            cursor = conn.cursor()
             row_counts = list()
             for sql in sql_list:
+                cursor = conn.cursor()
                 cursor.prepare(sql["sql"])
                 cursor.execute(None, sql["params"])
                 count = cursor.rowcount
-                if count is 0:
-                    self.rollback(conn)
-                    return None
                 row_counts.append(count)
             conn.commit()
+            self.give_back(conn, cursor)
             return row_counts
         except Exception as e:
-            if conn:
-                self.rollback(conn)
-                # self.give_back(conn, cursor)
+            self.rollback(conn)
+            self.give_back(conn, cursor)
             raise e
 
     def rollback(self, conn):
@@ -247,9 +244,9 @@ class RowOraclePool(object):
                 key_list = [key[0] for key in cursor.description]
                 for value in result:
                     return_result.append(dict(zip(key_list, value)))
-                # self._connection.release(conn)
+                self._connection.release(conn)
                 return return_result
-            # self._connection.release(conn)
+            self._connection.release(conn)
             return result
 
     def row_sql_commit(self, sql: str, param: dict):
@@ -271,14 +268,12 @@ class RowOraclePool(object):
             cursor.execute(sql, param)
 
             result = cursor.rowcount
-            if result is 0:
-                self.rollback(conn)
-            else:
-                conn.commit()
+            conn.commit()
         except Exception as e:
             self.rollback(conn)
             raise e
         else:
+            self._connection.release(conn)
             return result
 
     def row_sql_list(self, sql_list: list):
@@ -295,16 +290,14 @@ class RowOraclePool(object):
         conn = None
         try:
             conn = self._connection.acquire()
-            cursor = conn.cursor()
             row_counts = list()
             for sql in sql_list:
+                cursor = conn.cursor()
                 cursor.execute(sql["sql"], sql["params"])
                 count = cursor.rowcount
-                if count is 0:
-                    self.rollback(conn)
-                    return None
                 row_counts.append(count)
             conn.commit()
+            self._connection.release(conn)
             return row_counts
         except Exception as e:
             if conn:
