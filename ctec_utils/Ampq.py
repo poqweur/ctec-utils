@@ -46,7 +46,7 @@ class AsyncPublish:
         except Exception as e:
             return e
 
-    def send(self, data, exchange: str, routing_key="", flag=3) -> bool:
+    def send(self, data, exchange: str, routing_key="", flag=1) -> bool:
         if flag > 0:
             try:
                 self.data = data if isinstance(data, str) else json.dumps(data)
@@ -80,7 +80,7 @@ class Publish:
     """
 
     def __init__(self, host: str, port: int, user: str, password: str, vhost: str, heartbeat: int = 60,
-                 log=None, flag=3):
+                 log=None, flag=1):
         self.params = {"host": host, "port": port, "user": user,
                        "password": password, "vhost": vhost, "heartbeat": heartbeat}
         self.log = log
@@ -110,30 +110,24 @@ class Publish:
         except Exception as e:
             return e
 
-    def send(self, data, exchange: str, routing_key="", flag=3, ack=False) -> bool:
+    def send(self, data, exchange: str, routing_key="", ack=False) -> bool:
         data = data if isinstance(data, str) else json.dumps(data)
-        if flag > 0:
-            try:
-                if ack:
-                    self.channel.confirm_delivery()
-                res = self.channel.basic_publish(exchange=exchange,
-                                                 routing_key=routing_key,
-                                                 body=data,
-                                                 properties=pika.spec.BasicProperties(delivery_mode=2))
-                if self.log:
-                    self.log.debug("发送exchange={},routing_key={}成功,数据：{}".format(exchange, routing_key, data))
-                return res
-            except Exception as e:
-                if self.log:
-                    self.log.error("发送exchange={},routing_key={}异常,数据：{}".format(exchange, routing_key,
-                                                                                 traceback.format_exc()))
-                flag -= 1
-                self.__init__(host=self.params["host"], port=self.params["port"], log=self.log,
-                              password=self.params["password"], user=self.params["user"], vhost=self.params["vhost"])
-                return self.send(data, exchange, routing_key)
-        else:
+        try:
+            if ack:
+                self.channel.confirm_delivery()
+            res = self.channel.basic_publish(exchange=exchange,
+                                             routing_key=routing_key,
+                                             body=data,
+                                             properties=pika.spec.BasicProperties(delivery_mode=2))
             if self.log:
-                self.log.error("发送exchange={}, routing_key={}失败,数据：{}".format(exchange, routing_key, data))
+                self.log.debug("发送exchange={},routing_key={}成功,数据：{}".format(exchange, routing_key, data))
+            return res
+        except Exception as e:
+            if self.log:
+                self.log.error("发送exchange={},routing_key={}异常,数据：{}".format(exchange, routing_key,
+                                                                             traceback.format_exc()))
+            self.__init__(host=self.params["host"], port=self.params["port"], log=self.log,
+                          password=self.params["password"], user=self.params["user"], vhost=self.params["vhost"])
             return False
 
     def __del__(self):
