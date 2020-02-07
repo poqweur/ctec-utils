@@ -94,8 +94,7 @@ class Publish:
                 flag -= 1
                 self.__init__(host=host, port=port, user=user, password=password, vhost=vhost, log=log, flag=flag)
         else:
-            if self.log:
-                self.log.debug("创建对象失败3次")
+            raise Exception("创建rabbitMq对象失败-->%s次" % flag)
 
     def get_connection(self):
         credentials = pika.PlainCredentials(self.params["user"], self.params["password"])
