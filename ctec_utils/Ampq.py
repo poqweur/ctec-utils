@@ -65,7 +65,7 @@ class AsyncPublish:
                 flag -= 1
                 self.stop()
                 self.connection = self.get_connection()
-                self.send(data, exchange, routing_key)
+                self.send(data, exchange, routing_key, flag)
                 return False
             return True
         else:
@@ -125,8 +125,6 @@ class Publish:
             if self.log:
                 self.log.error("发送exchange={},routing_key={}异常,数据：{}".format(exchange, routing_key,
                                                                              traceback.format_exc()))
-            self.__init__(host=self.params["host"], port=self.params["port"], log=self.log,
-                          password=self.params["password"], user=self.params["user"], vhost=self.params["vhost"])
             return False
 
     def __del__(self):
