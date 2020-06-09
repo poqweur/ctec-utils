@@ -109,22 +109,30 @@ class Publish:
         except Exception as e:
             return e
 
-    def send(self, data, exchange: str, routing_key="", ack=False) -> bool:
+    def send(self, data, exchange: str, routing_key="", flag=3, ack=False) -> bool:
         data = data if isinstance(data, str) else json.dumps(data)
-        try:
-            if ack:
-                self.channel.confirm_delivery()
-            res = self.channel.basic_publish(exchange=exchange,
-                                             routing_key=routing_key,
-                                             body=data,
-                                             properties=pika.spec.BasicProperties(delivery_mode=2))
+        if flag > 0:
+            try:
+                if ack:
+                    self.channel.confirm_delivery()
+                res = self.channel.basic_publish(exchange=exchange,
+                                                 routing_key=routing_key,
+                                                 body=data,
+                                                 properties=pika.spec.BasicProperties(delivery_mode=2))
+                if self.log:
+                    self.log.debug("发送exchange={},routing_key={}成功,数据：{}".format(exchange, routing_key, data))
+                return res
+            except Exception as e:
+                if self.log:
+                    self.log.error("发送exchange={},routing_key={}异常,数据：{}".format(exchange, routing_key,
+                                                                                 traceback.format_exc()))
+                flag -= 1
+                self.__init__(host=self.params["host"], port=self.params["port"], log=self.log,
+                              password=self.params["password"], user=self.params["user"], vhost=self.params["vhost"])
+                return self.send(data, exchange, routing_key, flag=flag, ack=ack)
+        else:
             if self.log:
-                self.log.debug("发送exchange={},routing_key={}成功,数据：{}".format(exchange, routing_key, data))
-            return res
-        except Exception as e:
-            if self.log:
-                self.log.error("发送exchange={},routing_key={}异常,数据：{}".format(exchange, routing_key,
-                                                                             traceback.format_exc()))
+                self.log.error("发送exchange={}, routing_key={}失败,数据：{}".format(exchange, routing_key, data))
             return False
 
     def __del__(self):
